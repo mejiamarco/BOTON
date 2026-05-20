@@ -116,7 +116,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Tus credenciales vinculadas con éxito
         const firebaseConfig = {
             apiKey: "AIzaSyDpYhQI_6JW2xXTR3jU0JDD-bNX_-SG_3Q",
             authDomain: "pulsadoraula.firebaseapp.com",
@@ -132,7 +131,6 @@
         const db = getDatabase(app);
         const triviaRef = ref(db, 'sala_trivia');
 
-        // Banco de preguntas de física de muestra
         const preguntas = [
             { q: "¿Cuál es la velocidad de la luz en el vacío aproximadamente?", a: "300,000 km/s", b: "150,000 km/s", c: "340 m/s", d: "1,000 km/h", correcta: "A" },
             { q: "¿Qué ley física establece que a toda acción corresponde una reacción igual y opuesta?", a: "1ra Ley de Newton", b: "2da Ley de Newton", c: "3ra Ley de Newton", d: "Ley de Gravitación", correcta: "C" },
@@ -158,7 +156,6 @@
             showScreen('teacher-screen');
             loadQuestion(0);
 
-            // Escuchar respuestas de los alumnos en tiempo real
             onValue(ref(db, 'sala_trivia/respuestas'), (snapshot) => {
                 const respuestas = snapshot.val();
                 const listContainer = document.getElementById('players-list');
@@ -172,7 +169,6 @@
                     const r = respuestas[player];
                     const row = document.createElement('div');
                     row.className = "player-row";
-                    // Si el profesor ya dio clic en revelar, muestra si es correcto o no
                     let estadoRespuesta = "Enviado ✔️";
                     if (r.revelado) {
                         estadoRespuesta = (r.opcion === preguntas[indexPregunta].correcta) 
@@ -190,10 +186,10 @@
             juegoActivo = true;
             tiempoRestante = 20.0;
             document.getElementById('clock-display').innerText = "20.0";
-            document.getElementById('clock-display').style.borderColor = "#ff3333";
+            document.getElementById('clock-display').style.backgroundColor = "#2a0808";
             document.getElementById('clock-display').style.color = "#ff3333";
+            document.getElementById('clock-display').style.borderColor = "#ff3333";
 
-            // Resetear estilos visuales de las tarjetas
             document.querySelectorAll('.opcion-card').forEach(c => c.style.backgroundColor = "#1a1a24");
 
             const p = preguntas[idx];
@@ -203,7 +199,6 @@
             document.getElementById('text-C').innerText = p.c;
             document.getElementById('text-D').innerText = p.d;
 
-            // Sincronizar estado de la pregunta en Firebase para los alumnos
             set(triviaRef, {
                 pregunta_activa: true,
                 numero_pregunta: idx,
@@ -211,9 +206,8 @@
                 respuestas: null
             });
 
-            // Arrancar temporizador con audio dinámico exponencial
             if (countdownInterval) clearInterval(countdownInterval);
-            let proximoTic = 1000; // Inicia a 1 segundo por golpe
+            let proximoTic = 1000;
             
             function timerLoop() {
                 if (!juegoActivo) return;
@@ -227,13 +221,13 @@
                 }
                 document.getElementById('clock-display').innerText = tiempoRestante.toFixed(1);
                 
-                // Fabricar sonido de Tic-Tac nativo
-                playTick(tiempoRestante > 5 ? 800 : 1200); // Tono más agudo al final
+                // Pitido desesperante: Se vuelve progresivamente más agudo y usa onda de sierra punzante
+                let frecuenciaDinámica = tiempoRestante > 5 ? 900 : 1400; 
+                playAlarmTick(frecuenciaDinámica);
 
-                // Aceleración exponencial del intervalo del reloj según se acaba el tiempo
                 clearInterval(countdownInterval);
-                let factorTiempo = (tiempoRestante / 20.0); // De 1 a 0
-                proximoTic = 100 + (factorTiempo * 900); // Se acelera de 1000ms hasta 100ms
+                let factorTiempo = (tiempoRestante / 20.0);
+                proximoTic = 80 + (factorTiempo * 920); // Aceleración ultra agresiva al final (hasta 80ms)
                 countdownInterval = setInterval(timerLoop, proximoTic);
             }
             countdownInterval = setInterval(timerLoop, proximoTic);
@@ -244,9 +238,8 @@
             clearInterval(countdownInterval);
             
             const correcta = preguntas[indexPregunta].correcta;
-            document.getElementById(`op-${correcta}`).style.backgroundColor = "#002b11"; // Resaltar verde oscuro
+            document.getElementById(`op-${correcta}`).style.backgroundColor = "#002b11";
             
-            // Avisar a la base de datos que ya se puede evaluar la respuesta
             onValue(ref(db, 'sala_trivia/respuestas'), (snapshot) => {
                 const respuestas = snapshot.val();
                 if (!respuestas) return;
@@ -260,7 +253,7 @@
 
         window.nextQuestion = function() {
             let siguiente = indexPregunta + 1;
-            if (siguiente >= preguntas.length) siguiente = 0; // Bucle de preguntas
+            if (siguiente >= preguntas.length) siguiente = 0;
             loadQuestion(siguiente);
         }
 
@@ -280,18 +273,16 @@
             const overlay = document.getElementById('student-overlay');
             overlay.style.display = 'flex';
 
-            // Escuchar instrucciones del profesor en tiempo real
             onValue(triviaRef, (snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
 
                 if (data.estado === "jugando") {
-                    // Verificar si este alumno ya respondió esta pregunta
                     if (data.respuestas && data.respuestas[nombreEstudiante]) {
                         overlay.innerText = "👍 Respuesta enviada. Esperando al profesor...";
                         overlay.style.display = 'flex';
                     } else {
-                        overlay.style.display = 'none'; // Activa los botones para responder
+                        overlay.style.display = 'none';
                     }
                 } else if (data.estado === "revelado") {
                     overlay.innerText = "⏳ Tiempo terminado / Respuesta Revelada";
@@ -309,51 +300,61 @@
             });
         }
 
-        // --- SÍNTESIS DE AUDIO CON WEB AUDIO API (NATIVO) ---
+        // --- NÚCLEO DE SÍNTESIS DE AUDIO REFORZADO ---
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        function playTick(freq) {
+        // Pitido tipo alarma militar (Sawtooth es más penetrante)
+        function playAlarmTick(freq) {
             initAudio();
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             
-            osc.type = 'triangle';
+            osc.type = 'sawtooth'; 
             osc.frequency.setValueAtTime(freq, now);
             
-            // Golpe seco y cortito (estilo reloj mecánico)
-            gain.gain.setValueAtTime(0.1, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08); // Impacto rítmico corto
             
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(now); osc.stop(now + 0.06);
+            osc.start(now); osc.stop(now + 0.09);
         }
 
+        // Explosión de gran impacto cinemático (Doble oscilador: Bajo + Ruido Distorsionado)
         function triggerExplosion() {
             initAudio();
             const now = audioCtx.currentTime;
             
-            // Modificar colores del reloj del profesor a modo alarma rota
             document.getElementById('clock-display').style.color = "#ffffff";
             document.getElementById('clock-display').style.backgroundColor = "#ff0000";
+            document.getElementById('clock-display').style.borderColor = "#ffffff";
 
-            // Ruido blanco simulado con oscilador de onda de sierra a baja frecuencia + caída rápida
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100, now);
-            osc.frequency.linearRampToValueAtTime(10, now + 0.8); // Frecuencia descendente sorda
-            
-            gain.gain.setValueAtTime(0.4, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now); osc.stop(now + 0.9);
+            // 1. Oscilador de Impacto (El "Boom" grave)
+            const oscSub = audioCtx.createOscillator();
+            const gainSub = audioCtx.createGain();
+            oscSub.type = 'triangle';
+            oscSub.frequency.setValueAtTime(130, now);
+            oscSub.frequency.linearRampToValueAtTime(20, now + 1.2); // Caída sorda masiva
+            gainSub.gain.setValueAtTime(0.6, now);
+            gainSub.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            oscSub.connect(gainSub);
+            gainSub.connect(audioCtx.destination);
+            oscSub.start(now); oscSub.stop(now + 1.3);
+
+            // 2. Oscilador de Destrucción (Crujido de explosión tipo 8-bits)
+            const oscCrackle = audioCtx.createOscillator();
+            const gainCrackle = audioCtx.createGain();
+            oscCrackle.type = 'square'; // Onda cuadrada para distorsión agresiva nativa
+            oscCrackle.frequency.setValueAtTime(90, now);
+            oscCrackle.frequency.linearRampToValueAtTime(5, now + 0.6);
+            gainCrackle.gain.setValueAtTime(0.4, now);
+            gainCrackle.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+            oscCrackle.connect(gainCrackle);
+            gainCrackle.connect(audioCtx.destination);
+            oscCrackle.start(now); oscCrackle.stop(now + 0.7);
 
             update(triviaRef, { estado: "revelado" });
         }
