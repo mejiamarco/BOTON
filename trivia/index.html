@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💣 Trivia Bomba de Tiempo 💣</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #0f0f12; color: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        
+        .screen { display: none; flex-direction: column; flex: 1; width: 100%; height: 100%; }
+        .active { display: flex; }
+
+        /* SELECCIÓN DE ROL */
+        #role-screen { justify-content: center; align-items: center; background: radial-gradient(circle, #1a0f1a 0%, #0a050a 100%); }
+        .role-box { text-align: center; max-width: 400px; padding: 30px; background: #141419; border-radius: 15px; border: 1px solid #2a1a2a; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+        .role-btn { display: block; width: 100%; padding: 15px; margin: 15px 0; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.2s; }
+        .btn-prof { background-color: #ff5555; color: #fff; }
+        .btn-alum { background-color: #ffaa00; color: #121214; }
+        .role-btn:hover { transform: scale(1.03); }
+
+        /* VISTA PROFESOR */
+        header { background-color: #141419; padding: 15px; text-align: center; border-bottom: 2px solid #2a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        .bomba-timer { font-size: 2.5rem; font-weight: bold; color: #ff3333; background: #2a0808; padding: 5px 20px; border-radius: 10px; border: 2px solid #ff3333; font-family: monospace; }
+        
+        .trivia-container { padding: 40px; display: flex; flex-direction: column; flex: 1; justify-content: center; max-width: 1000px; margin: 0 auto; width: 100%; }
+        .pregunta-box { font-size: 2.2rem; font-weight: bold; text-align: center; margin-bottom: 40px; line-height: 1.4; background: rgba(255,255,255,0.03); padding: 30px; border-radius: 15px; border: 1px solid #333; }
+        
+        .opciones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .opcion-card { background: #1a1a24; padding: 25px; border-radius: 12px; font-size: 1.5rem; display: flex; align-items: center; border: 2px solid #2a2a35; }
+        .opcion-letra { font-weight: bold; font-size: 1.8rem; margin-right: 15px; color: #ffaa00; }
+        
+        /* Colores de las opciones para el profesor */
+        #op-A { border-left: 8px solid #0055ff; } #op-B { border-left: 8px solid #00b34a; }
+        #op-C { border-left: 8px solid #e60067; } #op-D { border-left: 8px solid #ffaa00; }
+
+        /* Panel de control flotante del Profesor */
+        .controls-panel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 50px; border: 1px solid #444; }
+        .ctrl-btn { padding: 10px 25px; font-size: 1rem; font-weight: bold; border: none; border-radius: 25px; cursor: pointer; }
+        .btn-next { background: #00b34a; color: white; }
+        .btn-show { background: #0055ff; color: white; }
+
+        /* Tabla de posiciones en pantalla del profesor */
+        .leaderboard { margin-top: 30px; background: #141419; padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        .leaderboard h3 { color: #ffaa00; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .player-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 1.1rem; }
+
+        /* VISTA ESTUDIANTE */
+        #student-screen { justify-content: center; align-items: center; padding: 20px; background: #0b0b0e; }
+        .student-input { width: 100%; max-width: 350px; padding: 15px; font-size: 1.2rem; background: #1a1a24; border: 2px solid #333; color: white; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+        
+        /* Control remoto del estudiante */
+        #gamepad-container { display: none; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; height: 80vh; padding: 20px; position: fixed; top:0; left:0; background: #0f0f12; }
+        .pad-btn { border: none; border-radius: 15px; color: white; font-size: 3rem; font-weight: bold; cursor: pointer; transition: transform 0.1s; display: flex; justify-content: center; align-items: center; }
+        .pad-btn:active { transform: scale(0.92); }
+        .pad-A { background: #0055ff; } .pad-B { background: #00b34a; }
+        .pad-C { background: #e60067; } .pad-D { background: #ffaa00; }
+        .status-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; justify-content: center; align-items: center; font-size: 2rem; font-weight: bold; text-transform: uppercase; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="role-screen" class="screen active">
+        <div class="role-box">
+            <h2>💣 Trivia Bomba 💣</h2>
+            <p style="color: #aaa; margin-bottom: 20px;">Reloj de presión en tiempo real</p>
+            <button class="role-btn btn-prof" onclick="initProfesor()">💻 Pantalla de Profesor</button>
+            <button class="role-btn btn-alum" onclick="initEstudiante()">📱 Entrar como Alumno</button>
+        </div>
+    </div>
+
+    <div id="teacher-screen" class="screen">
+        <header>
+            <h2 style="color: #ffaa00;">PREGUNTAR EN VIVO</h2>
+            <div class="bomba-timer" id="clock-display">20.0</div>
+        </header>
+        
+        <div class="trivia-container">
+            <div class="pregunta-box" id="question-text">Cargando pregunta...</div>
+            <div class="opciones-grid">
+                <div class="opcion-card" id="op-A"><span class="opcion-letra">A</span> <span id="text-A">Opcion A</span></div>
+                <div class="opcion-card" id="op-B"><span class="opcion-letra">B</span> <span id="text-B">Opcion B</span></div>
+                <div class="opcion-card" id="op-C"><span class="opcion-letra">C</span> <span id="text-C">Opcion C</span></div>
+                <div class="opcion-card" id="op-D"><span class="opcion-letra">D</span> <span id="text-D">Opcion D</span></div>
+            </div>
+
+            <div class="leaderboard">
+                <h3>Respuestas de la Ronda</h3>
+                <div id="players-list">
+                    <p style="color:#666;">Esperando respuestas...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <button class="ctrl-btn btn-show" onclick="revealAnswer()">👁️ Mostrar Correcta</button>
+            <button class="ctrl-btn btn-next" onclick="nextQuestion()">➡️ Siguiente Pregunta</button>
+        </div>
+    </div>
+
+    <div id="student-screen" class="screen">
+        <input type="text" class="student-input" id="student-name" placeholder="Escribe tu nombre o equipo" maxlength="15">
+        <button class="role-btn btn-alum" style="max-width:350px;" onclick="registerStudent()">Ingresar a la Trivia</button>
+    </div>
+
+    <div id="gamepad-container">
+        <button class="pad-btn pad-A" onclick="sendAnswer('A')">A</button>
+        <button class="pad-btn pad-B" onclick="sendAnswer('B')">B</button>
+        <button class="pad-btn pad-C" onclick="sendAnswer('C')">C</button>
+        <button class="pad-btn pad-D" onclick="sendAnswer('D')">D</button>
+    </div>
+
+    <div class="status-overlay" id="student-overlay">Esperando que el profesor inicie...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Tus credenciales vinculadas con éxito
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpYhQI_6JW2xXTR3jU0JDD-bNX_-SG_3Q",
+            authDomain: "pulsadoraula.firebaseapp.com",
+            databaseURL: "https://pulsadoraula-default-rtdb.firebaseio.com",
+            projectId: "pulsadoraula",
+            storageBucket: "pulsadoraula.firebasestorage.app",
+            messagingSenderId: "264276501069",
+            appId: "1:264276501069:web:9286be98f4f9540052f204",
+            measurementId: "G-9F14WWJ3D6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const triviaRef = ref(db, 'sala_trivia');
+
+        // Banco de preguntas de física de muestra
+        const preguntas = [
+            { q: "¿Cuál es la velocidad de la luz en el vacío aproximadamente?", a: "300,000 km/s", b: "150,000 km/s", c: "340 m/s", d: "1,000 km/h", correcta: "A" },
+            { q: "¿Qué ley física establece que a toda acción corresponde una reacción igual y opuesta?", a: "1ra Ley de Newton", b: "2da Ley de Newton", c: "3ra Ley de Newton", d: "Ley de Gravitación", correcta: "C" },
+            { q: "Si dejamos caer una pluma y una piedra en el vacío, ¿cuál cae primero?", a: "La piedra", b: "La pluma", c: "Ninguna cae", d: "Ambas al mismo tiempo", correcta: "D" }
+        ];
+
+        let indexPregunta = 0;
+        let miRol = null;
+        let nombreEstudiante = "";
+        let audioCtx = null;
+        let countdownInterval = null;
+        let tiempoRestante = 20.0;
+        let juegoActivo = false;
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // --- LÓGICA DEL PROFESOR ---
+        window.initProfesor = function() {
+            miRol = "profesor";
+            showScreen('teacher-screen');
+            loadQuestion(0);
+
+            // Escuchar respuestas de los alumnos en tiempo real
+            onValue(ref(db, 'sala_trivia/respuestas'), (snapshot) => {
+                const respuestas = snapshot.val();
+                const listContainer = document.getElementById('players-list');
+                if (!respuestas) {
+                    listContainer.innerHTML = `<p style="color:#666;">Esperando respuestas...</p>`;
+                    return;
+                }
+                
+                listContainer.innerHTML = "";
+                Object.keys(respuestas).forEach(player => {
+                    const r = respuestas[player];
+                    const row = document.createElement('div');
+                    row.className = "player-row";
+                    // Si el profesor ya dio clic en revelar, muestra si es correcto o no
+                    let estadoRespuesta = "Enviado ✔️";
+                    if (r.revelado) {
+                        estadoRespuesta = (r.opcion === preguntas[indexPregunta].correcta) 
+                            ? `<span style="color:#00b34a; font-weight:bold;">CORRECTO (A tiempo: ${r.tiempo}s)</span>` 
+                            : `<span style="color:#ff3333; font-weight:bold;">INCORRECTO (${r.opcion})</span>`;
+                    }
+                    row.innerHTML = `<span>👤 ${player}</span> <span>${estadoRespuesta}</span>`;
+                    listContainer.appendChild(row);
+                });
+            });
+        }
+
+        function loadQuestion(idx) {
+            indexPregunta = idx;
+            juegoActivo = true;
+            tiempoRestante = 20.0;
+            document.getElementById('clock-display').innerText = "20.0";
+            document.getElementById('clock-display').style.borderColor = "#ff3333";
+            document.getElementById('clock-display').style.color = "#ff3333";
+
+            // Resetear estilos visuales de las tarjetas
+            document.querySelectorAll('.opcion-card').forEach(c => c.style.backgroundColor = "#1a1a24");
+
+            const p = preguntas[idx];
+            document.getElementById('question-text').innerText = p.q;
+            document.getElementById('text-A').innerText = p.a;
+            document.getElementById('text-B').innerText = p.b;
+            document.getElementById('text-C').innerText = p.c;
+            document.getElementById('text-D').innerText = p.d;
+
+            // Sincronizar estado de la pregunta en Firebase para los alumnos
+            set(triviaRef, {
+                pregunta_activa: true,
+                numero_pregunta: idx,
+                estado: "jugando",
+                respuestas: null
+            });
+
+            // Arrancar temporizador con audio dinámico exponencial
+            if (countdownInterval) clearInterval(countdownInterval);
+            let proximoTic = 1000; // Inicia a 1 segundo por golpe
+            
+            function timerLoop() {
+                if (!juegoActivo) return;
+                tiempoRestante -= 0.1;
+                if (tiempoRestante <= 0) {
+                    tiempoRestante = 0;
+                    document.getElementById('clock-display').innerText = "0.0";
+                    clearInterval(countdownInterval);
+                    triggerExplosion();
+                    return;
+                }
+                document.getElementById('clock-display').innerText = tiempoRestante.toFixed(1);
+                
+                // Fabricar sonido de Tic-Tac nativo
+                playTick(tiempoRestante > 5 ? 800 : 1200); // Tono más agudo al final
+
+                // Aceleración exponencial del intervalo del reloj según se acaba el tiempo
+                clearInterval(countdownInterval);
+                let factorTiempo = (tiempoRestante / 20.0); // De 1 a 0
+                proximoTic = 100 + (factorTiempo * 900); // Se acelera de 1000ms hasta 100ms
+                countdownInterval = setInterval(timerLoop, proximoTic);
+            }
+            countdownInterval = setInterval(timerLoop, proximoTic);
+        }
+
+        window.revealAnswer = function() {
+            juegoActivo = false;
+            clearInterval(countdownInterval);
+            
+            const correcta = preguntas[indexPregunta].correcta;
+            document.getElementById(`op-${correcta}`).style.backgroundColor = "#002b11"; // Resaltar verde oscuro
+            
+            // Avisar a la base de datos que ya se puede evaluar la respuesta
+            onValue(ref(db, 'sala_trivia/respuestas'), (snapshot) => {
+                const respuestas = snapshot.val();
+                if (!respuestas) return;
+                Object.keys(respuestas).forEach(player => {
+                    update(ref(db, `sala_trivia/respuestas/${player}`), { revelado: true });
+                });
+            }, { onlyOnce: true });
+
+            update(triviaRef, { estado: "revelado" });
+        }
+
+        window.nextQuestion = function() {
+            let siguiente = indexPregunta + 1;
+            if (siguiente >= preguntas.length) siguiente = 0; // Bucle de preguntas
+            loadQuestion(siguiente);
+        }
+
+        // --- LÓGICA DEL ESTUDIANTE ---
+        window.initEstudiante = function() {
+            miRol = "estudiante";
+            showScreen('student-screen');
+        }
+
+        window.registerStudent = function() {
+            const input = document.getElementById('student-name').value.trim();
+            if (input === "") return alert("Escribe un nombre válido");
+            nombreEstudiante = input;
+
+            document.getElementById('student-screen').style.display = 'none';
+            document.getElementById('gamepad-container').style.display = 'grid';
+            const overlay = document.getElementById('student-overlay');
+            overlay.style.display = 'flex';
+
+            // Escuchar instrucciones del profesor en tiempo real
+            onValue(triviaRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                if (data.estado === "jugando") {
+                    // Verificar si este alumno ya respondió esta pregunta
+                    if (data.respuestas && data.respuestas[nombreEstudiante]) {
+                        overlay.innerText = "👍 Respuesta enviada. Esperando al profesor...";
+                        overlay.style.display = 'flex';
+                    } else {
+                        overlay.style.display = 'none'; // Activa los botones para responder
+                    }
+                } else if (data.estado === "revelado") {
+                    overlay.innerText = "⏳ Tiempo terminado / Respuesta Revelada";
+                    overlay.style.display = 'flex';
+                }
+            });
+        }
+
+        window.sendAnswer = function(letra) {
+            const tiempoDeRespuesta = (20.0 - tiempoRestante).toFixed(2);
+            set(ref(db, `sala_trivia/respuestas/${nombreEstudiante}`), {
+                opcion: letra,
+                tiempo: tiempoDeRespuesta,
+                revelado: false
+            });
+        }
+
+        // --- SÍNTESIS DE AUDIO CON WEB AUDIO API (NATIVO) ---
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playTick(freq) {
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+            
+            // Golpe seco y cortito (estilo reloj mecánico)
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.06);
+        }
+
+        function triggerExplosion() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            
+            // Modificar colores del reloj del profesor a modo alarma rota
+            document.getElementById('clock-display').style.color = "#ffffff";
+            document.getElementById('clock-display').style.backgroundColor = "#ff0000";
+
+            // Ruido blanco simulado con oscilador de onda de sierra a baja frecuencia + caída rápida
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(10, now + 0.8); // Frecuencia descendente sorda
+            
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.9);
+
+            update(triviaRef, { estado: "revelado" });
+        }
+    </script>
+</body>
+</html>
