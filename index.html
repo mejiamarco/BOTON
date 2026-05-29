@@ -66,11 +66,27 @@
         .btn-alum { background-color: var(--gold); color: #fff; }
         .role-btn:hover { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
 
-        /* VISTA PROFESOR */
-        header { background-color: var(--bg-card); padding: 15px 30px; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid var(--border-color); box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
-        header .logo-container { height: 60px; display: flex; align-items: center; }
+        /* VISTA PROFESOR - HEADER OPTIMIZADO PARA LOGO GRANDE */
+        header { 
+            background-color: var(--bg-card); 
+            padding: 20px 30px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
+            border-bottom: 2px solid var(--border-color); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
+        }
+        header .logo-container { 
+            height: 120px; /* Logo notablemente más grande */
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.08)); /* Realce visual */
+        }
         header .logo-container img { height: 100%; width: auto; object-fit: contain; }
-        header h1 { font-size: 1.8rem; color: var(--text-dark); letter-spacing: 1px; text-transform: uppercase; font-weight: 800; }
+        header h1 { font-size: 1.9rem; color: var(--text-dark); letter-spacing: 1px; text-transform: uppercase; font-weight: 800; text-align: center; }
         header h1 span { color: var(--gold); }
         
         .main-layout { display: flex; flex: 1; position: relative; overflow: hidden; }
@@ -95,7 +111,7 @@
 
         /* Tablero de Arenas */
         .arena { display: flex; flex: 1; position: relative; min-height: 300px; margin: 0 20px 20px 20px; gap: 15px; }
-        .lane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.04); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        .lane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; box-shadow: 0 8px 166px rgba(0,0,0,0.04); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         
         #lane-Azul { background: linear-gradient(135deg, #e6f0ff, #b3d1ff); border: 2px solid var(--team-blue); color: #0033aa; }
         #lane-Verde { background: linear-gradient(135deg, #e6f7ed, #b3f0cc); border: 2px solid var(--team-green); color: #006622; }
@@ -149,6 +165,8 @@
 
         /* Responsividad en dispositivos móviles */
         @media(max-width: 768px) {
+            header .logo-container { height: 90px; } /* Ajuste intermedio para pantallas chicas */
+            header h1 { font-size: 1.5rem; }
             .main-layout { flex-direction: column; }
             .bank-sidebar { width: 100%; border-left: none; border-top: 2px solid var(--border-color); }
             .city-badge { display: none; }
@@ -164,7 +182,7 @@
 
     <div id="role-screen" class="screen active">
         <div class="role-box">
-            <h2>Academia Puente</h2>
+            <h2>⚡ Academia Puente ⚡</h2>
             <p style="color: #64748b; margin-bottom: 10px; font-size: 0.95rem;">Panel Multi-Maestro Remoto</p>
             
             <input type="text" id="room-id" class="room-input" placeholder="CÓDIGO O APELLIDO DEL MAESTRO" maxlength="20">
@@ -177,9 +195,9 @@
     <div id="teacher-screen" class="screen">
         <header>
             <div class="logo-container">
-                <img src="LOGO PUENTE (1).png" alt="Logo Puente" onerror="this.style.display='none'">
+                <img src="LOGO PUENTE (1).png" alt="Logo Academia Puente" onerror="this.style.display='none'">
             </div>
-            <h1>⚡ LA ACADEMIA PUENTE: <span id="teacher-title-room">SALA</span> ⚡</h1>
+            <h1>⚡ ACADEMIA PUENTE: <span id="teacher-title-room">SALA</span> ⚡</h1>
         </header>
         
         <div class="main-layout">
@@ -247,7 +265,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        // Variables de entorno de la sesión
         let salaId = "GENERAL";
         let estadoRef = null;
         
@@ -256,7 +273,7 @@
             "Menciona el valor absoluto de la aceleración de la gravedad a nivel del mar: $g \\approx 9.81\\text{ m/s}^2$",
             "Resuelve la ecuación diferencial de primer orden uniforme si $\\frac{dy}{dx} = k \\cdot y$",
             "Si un conector explica el motivo de un hecho, ¿qué tipo de relación lógica está señalando?",
-            "¿Qué relación lógica representan conectores como 'sin embargo' o 'por el contrario'?",
+            "Qué relación lógica representan conectores como 'sin embargo' o 'por el contrario'?",
             "¿Cómo define el texto el proceso de 'Inferir'?"
         ];
 
@@ -280,7 +297,6 @@
             return valor;
         }
 
-        // CONTROLADOR DE PREGUNTAS EN EL PANEL LATERAL
         function actualizarListaPreguntasDOM() {
             const container = document.getElementById('dom-questions-list');
             const counter = document.getElementById('total-q-count');
@@ -319,7 +335,6 @@
             actualizarListaPreguntasDOM();
         }
 
-        // --- ENTRADA MÓDULO: PROFESOR ---
         window.initProfesor = function() {
             const salaValidada = validarSala();
             if(!salaValidada) return;
@@ -403,7 +418,6 @@
             if (miRol === "profesor" && e.key.toLowerCase() === 'r') clickReset();
         });
 
-        // --- ENTRADA MÓDULO: ESTUDIANTE ---
         window.initEstudiante = function() {
             const salaValidada = validarSala();
             if(!salaValidada) return;
@@ -473,7 +487,6 @@
 
         window.pressBuzzer = function() {
             const timestamp = (performance.now() / 1000).toFixed(2);
-            // Consulta de control atómica basada en la ruta específica del profesor actual
             fetch(`https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com/salas_maestros/${salaId}.json`)
             .then(res => res.json())
             .then(data => {
