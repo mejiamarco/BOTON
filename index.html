@@ -17,8 +17,23 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 
     <style>
+        /* PALETA DE COLORES REVISADA: Fondo Plomo Claro, Texto Negro y Acentos Dorados */
+        :root {
+            --bg-main: #eef0f3;          /* Plomo claro de fondo */
+            --bg-card: #ffffff;          /* Blanco/Gris muy limpio para contenedores */
+            --text-dark: #1e1e24;        /* Negro profundo para lectura óptima */
+            --gold: #d4af37;             /* Dorado clásico */
+            --gold-dark: #aa8822;        /* Dorado oscuro para contrastes */
+            --border-color: #cbd5e1;     /* Bordes plomos intermedios */
+            
+            /* Colores de equipos intactos */
+            --team-blue: #0055ff;
+            --team-green: #00b34a;
+            --team-pink: #e60067;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: #0f0f12; color: #fff; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+        body { background-color: var(--bg-main); color: var(--text-dark); overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
         
         .screen { display: none; flex-direction: column; flex: 1; width: 100%; height: 100%; }
         .active { display: flex; }
@@ -29,93 +44,117 @@
             right: -30px;
             top: 50%;
             transform: translateY(-50%) rotate(90deg);
-            background: linear-gradient(90deg, #00ffcc, #0055ff);
-            color: #0f0f12;
+            background: linear-gradient(90deg, var(--gold), var(--gold-dark));
+            color: #fff;
             padding: 8px 25px;
             font-weight: 900;
             letter-spacing: 4px;
             font-size: 0.9rem;
             border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             z-index: 10;
         }
 
-        /* SELECCIÓN DE ROL */
-        #role-screen { justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%); }
-        .role-box { text-align: center; max-width: 400px; padding: 30px; background: #1a1a1e; border-radius: 15px; border: 1px solid #2a2a30; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .role-btn { display: block; width: 100%; padding: 15px; margin: 15px 0; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.2s, background 0.2s; }
-        .btn-prof { background-color: #00ffcc; color: #121214; }
-        .btn-alum { background-color: #0055ff; color: #fff; }
-        .role-btn:hover { transform: scale(1.03); }
+        /* SELECCIÓN DE ROL / SALA */
+        #role-screen { justify-content: center; align-items: center; background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%); }
+        .role-box { text-align: center; width: 90%; max-width: 420px; padding: 35px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .role-box h2 { color: var(--text-dark); font-size: 1.8rem; margin-bottom: 5px; }
+        .room-input { width: 100%; padding: 12px; margin: 15px 0 5px 0; border: 2px solid var(--border-color); border-radius: 8px; font-size: 1rem; text-align: center; text-transform: uppercase; font-weight: bold; color: var(--text-dark); }
+        .room-input:focus { border-color: var(--gold); outline: none; }
+        .role-btn { display: block; width: 100%; padding: 14px; margin: 12px 0; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .btn-prof { background-color: var(--text-dark); color: var(--gold); border: 1px solid var(--gold); }
+        .btn-alum { background-color: var(--gold); color: #fff; }
+        .role-btn:hover { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
 
         /* VISTA PROFESOR */
-        header { background-color: #1a1a1e; padding: 15px 30px; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid #2a2a30; position: relative; }
+        header { background-color: var(--bg-card); padding: 15px 30px; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid var(--border-color); box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         header .logo-container { height: 60px; display: flex; align-items: center; }
         header .logo-container img { height: 100%; width: auto; object-fit: contain; }
-        header h1 { font-size: 2rem; color: #00ffcc; letter-spacing: 1px; text-transform: uppercase; }
+        header h1 { font-size: 1.8rem; color: var(--text-dark); letter-spacing: 1px; text-transform: uppercase; font-weight: 800; }
+        header h1 span { color: var(--gold); }
         
         .main-layout { display: flex; flex: 1; position: relative; overflow: hidden; }
         .dashboard { flex: 1; display: flex; flex-direction: column; }
 
         /* Panel de Preguntas del Profesor */
-        .question-box { background: #1f1f25; margin: 20px auto; padding: 25px; width: 90%; max-width: 900px; border-radius: 12px; border: 2px dashed #3a3a45; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); min-height: 110px; display: flex; align-items: center; justify-content: center; }
-        #question-text { font-size: 1.8rem; font-weight: bold; color: #ffff00; line-height: 1.4; width: 100%; overflow-x: auto; }
+        .question-box { background: var(--bg-card); margin: 20px auto; padding: 25px; width: 95%; max-width: 900px; border-radius: 12px; border: 2px solid var(--gold); text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); min-height: 120px; display: flex; align-items: center; justify-content: center; }
+        #question-text { font-size: 1.6rem; font-weight: bold; color: var(--text-dark); line-height: 1.4; width: 100%; overflow-x: auto; }
         
         /* Banco de Preguntas Lateral */
-        .bank-sidebar { width: 320px; background: #16161a; border-left: 2px solid #2a2a30; display: flex; flex-direction: column; padding: 20px; transition: all 0.3s ease; }
-        .bank-sidebar h3 { color: #00ffcc; margin-bottom: 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #2a2a30; padding-bottom: 5px; }
+        .bank-sidebar { width: 340px; background: var(--bg-card); border-left: 2px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; }
+        .bank-sidebar h3 { color: var(--text-dark); margin-bottom: 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 2px solid var(--gold); padding-bottom: 5px; font-weight: 800; }
         .question-input-zone { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .question-input-zone textarea { background: #0f0f12; border: 1px solid #3a3a45; border-radius: 6px; padding: 10px; color: white; resize: none; height: 70px; font-size: 0.9rem; }
-        .question-input-zone button { background: #00b34a; color: white; border: none; padding: 8px; font-weight: bold; border-radius: 6px; cursor: pointer; }
-        .question-input-zone button:hover { background: #00cc55; }
-        .questions-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: 40vh; padding-right: 5px; }
-        .q-item { background: #1f1f25; padding: 10px; border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a30; }
-        .q-item span { overflow-x: auto; white-space: nowrap; max-width: 80%; }
-        .q-item button { background: #ff3333; border: none; color: white; padding: 2px 6px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .question-input-zone textarea { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; color: var(--text-dark); resize: none; height: 75px; font-size: 0.9rem; }
+        .question-input-zone textarea:focus { outline: none; border-color: var(--gold); }
+        .question-input-zone button { background: var(--text-dark); color: var(--gold); border: 1px solid var(--gold); padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+        .question-input-zone button:hover { background: #2a2a35; }
+        .questions-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: 45vh; padding-right: 5px; }
+        .q-item { background: var(--bg-main); padding: 12px; border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); color: var(--text-dark); }
+        .q-item span { overflow-x: auto; white-space: nowrap; max-width: 80%; font-weight: 500; }
+        .q-item button { background: #ef4444; border: none; color: white; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-weight: bold; }
 
-        /* Tablero del Profesor */
-        .arena { display: flex; flex: 1; position: relative; min-height: 300px; }
-        .lane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.5s ease; border-right: 2px solid #121214; }
-        #lane-Azul { background: linear-gradient(135deg, #0d1b2a, #0055ff); }
-        #lane-Verde { background: linear-gradient(135deg, #0b2516, #00b34a); }
-        #lane-Rosa { background: linear-gradient(135deg, #2b0c1e, #e60067); }
-        .lane-name { font-size: 2.2rem; font-weight: bold; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
-        .lane-status { font-size: 1.4rem; margin-top: 15px; font-weight: 300; opacity: 0.7; text-align: center; padding: 0 10px; }
+        /* Tablero de Arenas */
+        .arena { display: flex; flex: 1; position: relative; min-height: 300px; margin: 0 20px 20px 20px; gap: 15px; }
+        .lane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.04); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         
-        /* Efecto Ganador */
-        .arena.has-winner .lane:not(.winner-lane) { flex: 0; width: 0; opacity: 0; overflow: hidden; border: none; }
+        #lane-Azul { background: linear-gradient(135deg, #e6f0ff, #b3d1ff); border: 2px solid var(--team-blue); color: #0033aa; }
+        #lane-Verde { background: linear-gradient(135deg, #e6f7ed, #b3f0cc); border: 2px solid var(--team-green); color: #006622; }
+        #lane-Rosa { background: linear-gradient(135deg, #ffe6f0, #ffb3d1); border: 2px solid var(--team-pink); color: #aa0044; }
+        
+        .lane-name { font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .lane-status { font-size: 1.2rem; margin-top: 15px; font-weight: 600; text-align: center; padding: 0 15px; opacity: 0.8; }
+        
+        /* Modificadores Dinámicos de Ganador */
+        .arena.has-winner .lane:not(.winner-lane) { flex: 0; width: 0; opacity: 0; padding: 0; margin: 0; overflow: hidden; border: none; }
         .arena.has-winner .lane.winner-lane { flex: 1; width: 100%; }
-        .winner-lane .lane-name { font-size: 3.5rem; animation: pulse 1s infinite alternate; }
-        .winner-lane .lane-status { opacity: 1; font-size: 2.5rem; font-weight: bold; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.6); }
-        
-        /* Controles de barra inferior */
-        .control-bar { display: flex; justify-content: center; gap: 20px; padding: 20px; background: #16161a; border-top: 2px solid #2a2a30; }
-        .control-btn { padding: 15px 35px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        .winner-lane { animation: push-winner 0.3s forwards; }
+        #arena-board.has-winner #lane-Azul.winner-lane { background: var(--team-blue); color: #fff; }
+        #arena-board.has-winner #lane-Verde.winner-lane { background: var(--team-green); color: #fff; }
+        #arena-board.has-winner #lane-Rosa.winner-lane { background: var(--team-pink); color: #fff; }
+        .winner-lane .lane-name { font-size: 3.5rem; }
+        .winner-lane .lane-status { opacity: 1; font-size: 2.2rem; font-weight: 800; }
+
+        /* Barra de Control Inferior */
+        .control-bar { display: flex; justify-content: center; gap: 20px; padding: 20px; background: var(--bg-card); border-top: 2px solid var(--border-color); }
+        .control-btn { padding: 15px 35px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.2s, background-2s; }
         .control-btn:hover { transform: scale(1.05); }
-        #draw-btn { background: #ffaa00; color: #000; }
-        #reset-btn { background: #fff; color: #121214; }
+        #draw-btn { background: var(--gold); color: white; }
+        #draw-btn:hover { background: var(--gold-dark); }
+        #reset-btn { background: var(--text-dark); color: var(--gold); border: 1px solid var(--gold); }
+        #reset-btn:hover { background: #22222a; }
 
         /* VISTA ESTUDIANTE */
-        #student-screen { justify-content: center; align-items: center; padding: 20px; background: #131316; }
-        .selector-box { text-align: center; width: 100%; max-width: 400px; background: #1a1a1e; padding: 25px; border-radius: 15px; border: 1px solid #2a2a30; }
-        .student-input { width: 100%; padding: 15px; font-size: 1.2rem; background: #121214; border: 2px solid #333; color: white; border-radius: 8px; text-align: center; margin-bottom: 20px; }
-        .team-select-btn { width: 100%; padding: 15px; margin: 8px 0; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; text-transform: uppercase; }
-        #btn-sel-Azul { background: #0055ff; } #btn-sel-Verde { background: #00b34a; } #btn-sel-Rosa { background: #e60067; }
+        #student-screen { justify-content: center; align-items: center; padding: 20px; background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%); }
+        .selector-box { text-align: center; width: 100%; max-width: 400px; background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .selector-box h3 { font-weight: 800; font-size: 1.4rem; margin-bottom: 15px; color: var(--text-dark); }
+        .student-input { width: 100%; padding: 15px; font-size: 1.2rem; background: var(--bg-main); border: 2px solid var(--border-color); color: var(--text-dark); border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: 600; }
+        .student-input:focus { border-color: var(--gold); outline: none; }
+        .team-select-btn { width: 100%; padding: 15px; margin: 8px 0; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; text-transform: uppercase; transition: transform 0.1s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .team-select-btn:active { transform: scale(0.98); }
+        #btn-sel-Azul { background: var(--team-blue); } 
+        #btn-sel-Verde { background: var(--team-green); } 
+        #btn-sel-Rosa { background: var(--team-pink); }
         
-        /* Botón de pulsación */
-        #buzzer-container { display: none; width: 100%; height: 100vh; flex-direction: column; justify-content: center; align-items: center; position: fixed; top:0; left:0; z-index: 100; background: #121214; }
-        .buzzer-btn { width: 260px; height: 260px; border-radius: 50%; border: 15px solid rgba(255,255,255,0.2); color: white; font-size: 2.2rem; font-weight: bold; text-transform: uppercase; cursor: pointer; box-shadow: 0 15px 40px rgba(0,0,0,0.6); transition: transform 0.1s; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; }
-        .buzzer-btn:disabled { background-color: #333 !important; cursor: not-allowed; opacity: 0.3; }
-        .buzzer-btn:active:not(:disabled) { transform: scale(0.92); }
-        .blocked-msg { display: none; margin-top: 30px; font-size: 1.3rem; color: #ff3333; font-weight: bold; text-transform: uppercase; text-align: center; }
+        /* Contenedor del Pulsador Gigante */
+        #buzzer-container { display: none; width: 100%; height: 100vh; flex-direction: column; justify-content: center; align-items: center; position: fixed; top:0; left:0; z-index: 100; background: var(--bg-main); }
+        .buzzer-btn { width: 270px; height: 270px; border-radius: 50%; border: 15px solid rgba(255,255,255,0.6); color: white; font-size: 2.4rem; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 20px 40px rgba(0,0,0,0.15); transition: transform 0.05s; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; }
+        .buzzer-btn:disabled { background-color: #cbd5e1 !important; color: #94a3b8 !important; border-color: #e2e8f0 !important; cursor: not-allowed; box-shadow: none; transform: none !important; }
+        .buzzer-btn:active:not(:disabled) { transform: scale(0.90); }
+        .blocked-msg { display: none; margin-top: 30px; font-size: 1.4rem; color: #ef4444; font-weight: 800; text-transform: uppercase; text-align: center; line-height: 1.4; }
 
-        @keyframes pulse { from { text-shadow: 0 0 10px #fff; } to { text-shadow: 0 0 30px #fff; } }
+        @keyframes push-winner {
+            0% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
 
-        /* Responsivo para móviles */
+        /* Responsividad en dispositivos móviles */
         @media(max-width: 768px) {
             .main-layout { flex-direction: column; }
-            .bank-sidebar { width: 100%; border-left: none; border-top: 2px solid #2a2a30; }
+            .bank-sidebar { width: 100%; border-left: none; border-top: 2px solid var(--border-color); }
             .city-badge { display: none; }
+            .arena { flex-direction: column; height: auto; }
+            .lane { padding: 30px 10px; }
+            .winner-lane .lane-name { font-size: 2.2rem; }
         }
     </style>
 </head>
@@ -126,7 +165,10 @@
     <div id="role-screen" class="screen active">
         <div class="role-box">
             <h2>Academia del Saber Virtual</h2>
-            <p style="color: #aaa; margin-bottom: 20px;">Banco de Preguntas Remoto</p>
+            <p style="color: #64748b; margin-bottom: 10px; font-size: 0.95rem;">Panel Multi-Maestro Remoto</p>
+            
+            <input type="text" id="room-id" class="room-input" placeholder="CÓDIGO O APELLIDO DEL MAESTRO" maxlength="20">
+            
             <button class="role-btn btn-prof" onclick="initProfesor()">💻 Pantalla de Profesor</button>
             <button class="role-btn btn-alum" onclick="initEstudiante()">📱 Entrar como Alumno</button>
         </div>
@@ -137,7 +179,7 @@
             <div class="logo-container">
                 <img src="LOGO PUENTE (1).png" alt="Logo Puente" onerror="this.style.display='none'">
             </div>
-            <h1>⚡ LA ACADEMIA DEL SABER ⚡</h1>
+            <h1>⚡ LA ACADEMIA DEL SABER: <span id="teacher-title-room">SALA</span> ⚡</h1>
         </header>
         
         <div class="main-layout">
@@ -156,10 +198,10 @@
             <div class="bank-sidebar">
                 <h3>🛠️ Gestor de Preguntas</h3>
                 <div class="question-input-zone">
-                    <textarea id="new-q-input" placeholder="Escribe una pregunta... Puedes usar LaTeX: $\Delta x = v \cdot t$ o $$E=mc^2$$"></textarea>
+                    <textarea id="new-q-input" placeholder="Escribe una pregunta... Soporta LaTeX: $\Delta x = v \cdot t$ o $$E=mc^2$$"></textarea>
                     <button onclick="agregarPreguntaManual()">Añadir al Banco</button>
                 </div>
-                <h3>📚 Preguntas en lista (<span id="total-q-count">0</span>)</h3>
+                <h3>📚 Preguntas (<span id="total-q-count">0</span>)</h3>
                 <div class="questions-list" id="dom-questions-list"></div>
             </div>
         </div>
@@ -172,7 +214,8 @@
 
     <div id="student-screen" class="screen">
         <div class="selector-box">
-            <h3 style="margin-bottom: 15px; color: #00ffcc;">REGISTRO DE JUGADOR</h3>
+            <h3>REGISTRO DE JUGADOR</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 15px;">Sala activa: <strong id="student-active-room" style="color: var(--gold)">-</strong></p>
             <input type="text" class="student-input" id="player-username" placeholder="Escribe tu nombre" maxlength="15">
             <button class="team-select-btn" id="btn-sel-Azul" onclick="selectTeam('Azul')">Equipo Azul</button>
             <button class="team-select-btn" id="btn-sel-Verde" onclick="selectTeam('Verde')">Equipo Verde</button>
@@ -181,9 +224,9 @@
     </div>
 
     <div id="buzzer-container">
-        <div id="student-live-question" style="color: #ffaa00; font-size: 1.4rem; text-align: center; margin-bottom: 25px; padding: 0 20px; font-weight: bold; min-height: 60px; width: 100%; max-width: 800px; overflow-x: auto;">Espera a que el profesor lance la pregunta...</div>
+        <div id="student-live-question" style="color: var(--text-dark); font-size: 1.4rem; text-align: center; margin-bottom: 30px; padding: 0 20px; font-weight: bold; min-height: 60px; width: 100%; max-width: 800px; overflow-x: auto;">Espera a que el profesor lance la pregunta...</div>
         <button class="buzzer-btn" id="main-buzzer" onclick="pressBuzzer()" disabled>BLOQUEADO</button>
-        <div class="blocked-msg" id="blocked-text">❌ ¡Te ganaron el botón! ❌<br><span id="winner-info" style="color: #aaa; font-size: 1rem;"></span></div>
+        <div class="blocked-msg" id="blocked-text">❌ ¡Botón Bloqueado! ❌<br><span id="winner-info" style="color: #64748b; font-size: 1.1rem; font-weight: 500;"></span></div>
     </div>
 
     <script type="module">
@@ -203,13 +246,15 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const estadoRef = ref(db, 'sala_concurso');
-
-        // Banco predeterminado cargado inicialmente
+        
+        // Variables de entorno de la sesión
+        let salaId = "GENERAL";
+        let estadoRef = null;
+        
         let bancoPreguntas = [
             "¿Cómo se llama la organización interna de las ideas principales que estructuran un texto completo?",
-            "Menciona el valor absoluto de la aceleración de la gravedad a nivel del mar: $g \approx 9.81 m/s^2$",
-            "Resuelve la ecuación diferencial de primer orden uniforme si $\\frac{dy}{dx} = k \cdot y$",
+            "Menciona el valor absoluto de la aceleración de la gravedad a nivel del mar: $g \\approx 9.81\\text{ m/s}^2$",
+            "Resuelve la ecuación diferencial de primer orden uniforme si $\\frac{dy}{dx} = k \\cdot y$",
             "Si un conector explica el motivo de un hecho, ¿qué tipo de relación lógica está señalando?",
             "¿Qué relación lógica representan conectores como 'sin embargo' o 'por el contrario'?",
             "¿Cómo define el texto el proceso de 'Inferir'?"
@@ -225,7 +270,17 @@
             document.getElementById(screenId).classList.add('active');
         }
 
-        // Renderizado Dinámico de las Preguntas del Repositorio Lateral
+        function validarSala() {
+            const input = document.getElementById('room-id');
+            const valor = input.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "");
+            if(valor === "") {
+                alert("Por favor, introduce un código válido para la sala del maestro.");
+                return null;
+            }
+            return valor;
+        }
+
+        // CONTROLADOR DE PREGUNTAS EN EL PANEL LATERAL
         function actualizarListaPreguntasDOM() {
             const container = document.getElementById('dom-questions-list');
             const counter = document.getElementById('total-q-count');
@@ -241,7 +296,6 @@
                 container.appendChild(item);
             });
             
-            // Re-procesar fórmulas matemáticas añadidas dinámicamente en el panel
             if(window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise();
             }
@@ -258,21 +312,28 @@
 
         window.eliminarPreguntaManual = function(index) {
             if(bancoPreguntas.length <= 1) {
-                alert("Debes mantener al menos una pregunta en el banco.");
+                alert("La sala requiere mantener al menos una pregunta en almacén.");
                 return;
             }
             bancoPreguntas.splice(index, 1);
             actualizarListaPreguntasDOM();
         }
 
-        // --- LÓGICA DEL PROFESOR ---
+        // --- ENTRADA MÓDULO: PROFESOR ---
         window.initProfesor = function() {
-            const pass = prompt("Acceso Restringido. Introduce la contraseña de Profesor:");
+            const salaValidada = validarSala();
+            if(!salaValidada) return;
+
+            const pass = prompt(`Acceso Restringido para Sala [${salaValidada}]. Contraseña de Profesor:`);
             if (pass !== "mejia") {
-                alert("❌ Contraseña incorrecta. Acceso denegado.");
+                alert("❌ Credencial Incorrecta. Acceso denegado.");
                 return;
             }
 
+            salaId = salaValidada;
+            estadoRef = ref(db, `salas_maestros/${salaId}`);
+            
+            document.getElementById('teacher-title-room').innerText = salaId;
             miRol = "profesor";
             showScreen('teacher-screen');
             actualizarListaPreguntasDOM();
@@ -288,10 +349,9 @@
                 if (data.pregunta_activa) {
                     questionElement.innerText = data.pregunta_activa;
                 } else {
-                    questionElement.innerText = 'Presiona "Lanzar Pregunta Aleatoria" para comenzar.';
+                    questionElement.innerText = 'Presiona "Lanzar Pregunta Aleatoria" para comenzar la ronda.';
                 }
 
-                // Disparador de procesamiento MathJax cada vez que cambia el texto de la pregunta
                 if(window.MathJax && MathJax.typesetPromise) {
                     MathJax.typesetPromise([questionElement]);
                 }
@@ -304,7 +364,7 @@
                     if (winnerLane) {
                         winnerLane.classList.add('winner-lane');
                         arena.classList.add('has-winner');
-                        document.getElementById(`status-${data.ganador_equipo}`).innerText = `¡${data.ganador_nombre} respondió primero!`;
+                        document.getElementById(`status-${data.ganador_equipo}`).innerText = `¡${data.ganador_nombre} pulsó primero!`;
                         if (!yaTieneGanadorLocal) playChime();
                     }
                 } else {
@@ -312,7 +372,7 @@
                     document.querySelectorAll('.lane').forEach(l => {
                         l.classList.remove('winner-lane');
                         const id = l.id.replace('lane-', '');
-                        document.getElementById(`status-${id}`).innerText = data.pregunta_activa ? "¡Pulsadores Habilitados! ¡Presionen!" : "Esperando pregunta...";
+                        document.getElementById(`status-${id}`).innerText = data.pregunta_activa ? "¡PULSADORES ACTIVOS!" : "Esperando asignación...";
                     });
                 }
             });
@@ -330,6 +390,7 @@
         }
 
         window.clickReset = function() {
+            if(!estadoRef) return;
             set(estadoRef, {
                 pregunta_activa: null,
                 ganador_equipo: null,
@@ -342,8 +403,15 @@
             if (miRol === "profesor" && e.key.toLowerCase() === 'r') clickReset();
         });
 
-        // --- LÓGICA DEL ESTUDIANTE ---
+        // --- ENTRADA MÓDULO: ESTUDIANTE ---
         window.initEstudiante = function() {
+            const salaValidada = validarSala();
+            if(!salaValidada) return;
+
+            salaId = salaValidada;
+            estadoRef = ref(db, `salas_maestros/${salaId}`);
+
+            document.getElementById('student-active-room').innerText = salaId;
             miRol = "estudiante";
             showScreen('student-screen');
         }
@@ -351,7 +419,7 @@
         window.selectTeam = function(equipo) {
             const nameInput = document.getElementById('player-username').value.trim();
             if (nameInput === "") {
-                alert("Por favor, escribe tu nombre.");
+                alert("Por favor, introduce tu nombre para el registro de la sala.");
                 return;
             }
             miNombre = nameInput;
@@ -377,9 +445,9 @@
                     if (!data.ganador_equipo) {
                         mainBuzzer.disabled = false;
                         mainBuzzer.innerText = "¡PULSAR!";
-                        if(miEquipo === 'Azul') mainBuzzer.style.backgroundColor = '#0055ff';
-                        if(miEquipo === 'Verde') mainBuzzer.style.backgroundColor = '#00b34a';
-                        if(miEquipo === 'Rosa') mainBuzzer.style.backgroundColor = '#e60067';
+                        if(miEquipo === 'Azul') mainBuzzer.style.backgroundColor = 'var(--team-blue)';
+                        if(miEquipo === 'Verde') mainBuzzer.style.backgroundColor = 'var(--team-green)';
+                        if(miEquipo === 'Rosa') mainBuzzer.style.backgroundColor = 'var(--team-pink)';
                         document.getElementById('blocked-text').style.display = 'none';
                     }
                 } else {
@@ -393,11 +461,11 @@
                     mainBuzzer.disabled = true;
                     if (data.ganador_nombre === miNombre) {
                         mainBuzzer.innerText = "¡TUYA!";
-                        mainBuzzer.style.backgroundColor = "#ffaa00";
+                        mainBuzzer.style.backgroundColor = "var(--gold)";
                     } else {
                         mainBuzzer.innerText = "BLOQUEADO";
                         document.getElementById('blocked-text').style.display = 'block';
-                        document.getElementById('winner-info').innerText = `${data.ganador_nombre} del equipo ${data.ganador_equipo} ganó el botón.`;
+                        document.getElementById('winner-info').innerText = `${data.ganador_nombre} (${data.ganador_equipo}) ganó la pulsación.`;
                     }
                 }
             });
@@ -405,7 +473,8 @@
 
         window.pressBuzzer = function() {
             const timestamp = (performance.now() / 1000).toFixed(2);
-            fetch(`https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com/sala_concurso.json`)
+            // Consulta de control atómica basada en la ruta específica del profesor actual
+            fetch(`https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com/salas_maestros/${salaId}.json`)
             .then(res => res.json())
             .then(data => {
                 if (data && data.pregunta_activa && !data.ganador_equipo) {
