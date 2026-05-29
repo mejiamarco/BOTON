@@ -4,12 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚡ Trivia de Velocidad: Academia del Saber ⚡</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: #0f0f12; color: #fff; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; }
+        body { background-color: #0f0f12; color: #fff; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
         
         .screen { display: none; flex-direction: column; flex: 1; width: 100%; height: 100%; }
         .active { display: flex; }
+
+        /* DISTINTIVO LA PAZ */
+        .city-badge {
+            position: fixed;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            background: linear-gradient(90deg, #00ffcc, #0055ff);
+            color: #0f0f12;
+            padding: 8px 25px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
 
         /* SELECCIÓN DE ROL */
         #role-screen { justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%); }
@@ -20,13 +49,30 @@
         .role-btn:hover { transform: scale(1.03); }
 
         /* VISTA PROFESOR */
-        header { background-color: #1a1a1e; padding: 20px; text-align: center; border-bottom: 2px solid #2a2a30; }
-        header h1 { font-size: 2rem; color: #00ffcc; letter-spacing: 1px; }
+        header { background-color: #1a1a1e; padding: 15px 30px; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid #2a2a30; position: relative; }
+        header .logo-container { height: 60px; display: flex; align-items: center; }
+        header .logo-container img { height: 100%; width: auto; object-fit: contain; }
+        header h1 { font-size: 2rem; color: #00ffcc; letter-spacing: 1px; text-transform: uppercase; }
         
-        /* Zona de Preguntas */
-        .question-box { background: #1f1f25; margin: 20px auto; padding: 25px; width: 90%; max-width: 900px; border-radius: 12px; border: 2px dashed #3a3a45; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        #question-text { font-size: 1.8rem; font-weight: bold; color: #ffff00; min-height: 50px; line-height: 1.4; }
+        .main-layout { display: flex; flex: 1; position: relative; overflow: hidden; }
+        .dashboard { flex: 1; display: flex; flex-direction: column; }
+
+        /* Panel de Preguntas del Profesor */
+        .question-box { background: #1f1f25; margin: 20px auto; padding: 25px; width: 90%; max-width: 900px; border-radius: 12px; border: 2px dashed #3a3a45; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); min-height: 110px; display: flex; align-items: center; justify-content: center; }
+        #question-text { font-size: 1.8rem; font-weight: bold; color: #ffff00; line-height: 1.4; width: 100%; overflow-x: auto; }
         
+        /* Banco de Preguntas Lateral */
+        .bank-sidebar { width: 320px; background: #16161a; border-left: 2px solid #2a2a30; display: flex; flex-direction: column; padding: 20px; transition: all 0.3s ease; }
+        .bank-sidebar h3 { color: #00ffcc; margin-bottom: 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #2a2a30; padding-bottom: 5px; }
+        .question-input-zone { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .question-input-zone textarea { background: #0f0f12; border: 1px solid #3a3a45; border-radius: 6px; padding: 10px; color: white; resize: none; height: 70px; font-size: 0.9rem; }
+        .question-input-zone button { background: #00b34a; color: white; border: none; padding: 8px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .question-input-zone button:hover { background: #00cc55; }
+        .questions-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: 40vh; padding-right: 5px; }
+        .q-item { background: #1f1f25; padding: 10px; border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a30; }
+        .q-item span { overflow-x: auto; white-space: nowrap; max-width: 80%; }
+        .q-item button { background: #ff3333; border: none; color: white; padding: 2px 6px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+
         /* Tablero del Profesor */
         .arena { display: flex; flex: 1; position: relative; min-height: 300px; }
         .lane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.5s ease; border-right: 2px solid #121214; }
@@ -58,15 +104,24 @@
         
         /* Botón de pulsación */
         #buzzer-container { display: none; width: 100%; height: 100vh; flex-direction: column; justify-content: center; align-items: center; position: fixed; top:0; left:0; z-index: 100; background: #121214; }
-        .buzzer-btn { width: 260px; height: 260px; border-radius: 50%; border: 15px solid rgba(255,255,255,0.2); color: white; font-size: 2.2rem; font-weight: bold; text-transform: uppercase; cursor: pointer; box-shadow: 0 15px 40px rgba(0,0,0,0.6); transition: transform 0.1s; }
+        .buzzer-btn { width: 260px; height: 260px; border-radius: 50%; border: 15px solid rgba(255,255,255,0.2); color: white; font-size: 2.2rem; font-weight: bold; text-transform: uppercase; cursor: pointer; box-shadow: 0 15px 40px rgba(0,0,0,0.6); transition: transform 0.1s; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; }
         .buzzer-btn:disabled { background-color: #333 !important; cursor: not-allowed; opacity: 0.3; }
         .buzzer-btn:active:not(:disabled) { transform: scale(0.92); }
         .blocked-msg { display: none; margin-top: 30px; font-size: 1.3rem; color: #ff3333; font-weight: bold; text-transform: uppercase; text-align: center; }
 
         @keyframes pulse { from { text-shadow: 0 0 10px #fff; } to { text-shadow: 0 0 30px #fff; } }
+
+        /* Responsivo para móviles */
+        @media(max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .bank-sidebar { width: 100%; border-left: none; border-top: 2px solid #2a2a30; }
+            .city-badge { display: none; }
+        }
     </style>
 </head>
 <body>
+
+    <div class="city-badge">LA PAZ</div>
 
     <div id="role-screen" class="screen active">
         <div class="role-box">
@@ -79,17 +134,34 @@
 
     <div id="teacher-screen" class="screen">
         <header>
+            <div class="logo-container">
+                <img src="LOGO PUENTE (1).png" alt="Logo Puente" onerror="this.style.display='none'">
+            </div>
             <h1>⚡ LA ACADEMIA DEL SABER ⚡</h1>
         </header>
         
-        <div class="question-box">
-            <div id="question-text">Presiona "Lanzar Pregunta" para iniciar la ronda...</div>
-        </div>
+        <div class="main-layout">
+            <div class="dashboard">
+                <div class="question-box">
+                    <div id="question-text">Presiona "Lanzar Pregunta" para iniciar la ronda...</div>
+                </div>
 
-        <div class="arena" id="arena-board">
-            <div class="lane" id="lane-Azul"><div class="lane-name">Equipo Azul</div><div class="lane-status" id="status-Azul">Esperando pregunta...</div></div>
-            <div class="lane" id="lane-Verde"><div class="lane-name">Equipo Verde</div><div class="lane-status" id="status-Verde">Esperando pregunta...</div></div>
-            <div class="lane" id="lane-Rosa"><div class="lane-name">Equipo Rosa</div><div class="lane-status" id="status-Rosa">Esperando pregunta...</div></div>
+                <div class="arena" id="arena-board">
+                    <div class="lane" id="lane-Azul"><div class="lane-name">Equipo Azul</div><div class="lane-status" id="status-Azul">Esperando pregunta...</div></div>
+                    <div class="lane" id="lane-Verde"><div class="lane-name">Equipo Verde</div><div class="lane-status" id="status-Verde">Esperando pregunta...</div></div>
+                    <div class="lane" id="lane-Rosa"><div class="lane-name">Equipo Rosa</div><div class="lane-status" id="status-Rosa">Esperando pregunta...</div></div>
+                </div>
+            </div>
+
+            <div class="bank-sidebar">
+                <h3>🛠️ Gestor de Preguntas</h3>
+                <div class="question-input-zone">
+                    <textarea id="new-q-input" placeholder="Escribe una pregunta... Puedes usar LaTeX: $\Delta x = v \cdot t$ o $$E=mc^2$$"></textarea>
+                    <button onclick="agregarPreguntaManual()">Añadir al Banco</button>
+                </div>
+                <h3>📚 Preguntas en lista (<span id="total-q-count">0</span>)</h3>
+                <div class="questions-list" id="dom-questions-list"></div>
+            </div>
         </div>
 
         <div class="control-bar">
@@ -109,7 +181,7 @@
     </div>
 
     <div id="buzzer-container">
-        <div id="student-live-question" style="color: #ffaa00; font-size: 1.2rem; text-align: center; margin-bottom: 25px; padding: 0 20px; font-weight: bold;">Espera a que el profesor lance la pregunta...</div>
+        <div id="student-live-question" style="color: #ffaa00; font-size: 1.4rem; text-align: center; margin-bottom: 25px; padding: 0 20px; font-weight: bold; min-height: 60px; width: 100%; max-width: 800px; overflow-x: auto;">Espera a que el profesor lance la pregunta...</div>
         <button class="buzzer-btn" id="main-buzzer" onclick="pressBuzzer()" disabled>BLOQUEADO</button>
         <div class="blocked-msg" id="blocked-text">❌ ¡Te ganaron el botón! ❌<br><span id="winner-info" style="color: #aaa; font-size: 1rem;"></span></div>
     </div>
@@ -133,17 +205,14 @@
         const db = getDatabase(app);
         const estadoRef = ref(db, 'sala_concurso');
 
-        const bancoPreguntas = [
+        // Banco predeterminado cargado inicialmente
+        let bancoPreguntas = [
             "¿Cómo se llama la organización interna de las ideas principales que estructuran un texto completo?",
-            "Según el texto teórico, ¿cuál es la definición exacta de 'El Tema'?",
-            "¿Qué definición le da el libro a 'La Idea Principal' de un texto?",
-            "Menciona una de las pistas clave que el texto sugiere para lograr identificar el Tema de una lectura.",
-            "¿En qué párrafos específicos el texto recomienda buscar prioritariamente para hallar la Idea Principal?",
-            "¿Qué nombre reciben las palabras o expresiones que se usan para conectar oraciones y estructurar el mensaje?",
+            "Menciona el valor absoluto de la aceleración de la gravedad a nivel del mar: $g \approx 9.81 m/s^2$",
+            "Resuelve la ecuación diferencial de primer orden uniforme si $\\frac{dy}{dx} = k \cdot y$",
             "Si un conector explica el motivo de un hecho, ¿qué tipo de relación lógica está señalando?",
             "¿Qué relación lógica representan conectores como 'sin embargo' o 'por el contrario'?",
-            "¿Cómo define el texto el proceso de 'Inferir'?",
-            "Cuando desciframos el significado de una palabra desconocida usando los datos que la rodean, ¿qué tipo de inferencia aplicamos?"
+            "¿Cómo define el texto el proceso de 'Inferir'?"
         ];
 
         let miEquipo = null;
@@ -156,18 +225,57 @@
             document.getElementById(screenId).classList.add('active');
         }
 
-        // --- LÓGICA DEL PROFESOR (CON CONTROL DE CONTRASEÑA) ---
-        window.initProfesor = function() {
-            // Se le solicita la contraseña al usuario mediante un prompt
-            const pass = prompt("Acceso Restringido. Introduce la contraseña de Profesor:");
+        // Renderizado Dinámico de las Preguntas del Repositorio Lateral
+        function actualizarListaPreguntasDOM() {
+            const container = document.getElementById('dom-questions-list');
+            const counter = document.getElementById('total-q-count');
+            if(!container) return;
             
+            container.innerHTML = "";
+            counter.innerText = bancoPreguntas.length;
+
+            bancoPreguntas.forEach((q, index) => {
+                const item = document.createElement('div');
+                item.className = "q-item";
+                item.innerHTML = `<span>${index + 1}. ${q}</span> <button onclick="eliminarPreguntaManual(${index})">×</button>`;
+                container.appendChild(item);
+            });
+            
+            // Re-procesar fórmulas matemáticas añadidas dinámicamente en el panel
+            if(window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        window.agregarPreguntaManual = function() {
+            const input = document.getElementById('new-q-input');
+            const texto = input.value.trim();
+            if(texto === "") return;
+            bancoPreguntas.push(texto);
+            input.value = "";
+            actualizarListaPreguntasDOM();
+        }
+
+        window.eliminarPreguntaManual = function(index) {
+            if(bancoPreguntas.length <= 1) {
+                alert("Debes mantener al menos una pregunta en el banco.");
+                return;
+            }
+            bancoPreguntas.splice(index, 1);
+            actualizarListaPreguntasDOM();
+        }
+
+        // --- LÓGICA DEL PROFESOR ---
+        window.initProfesor = function() {
+            const pass = prompt("Acceso Restringido. Introduce la contraseña de Profesor:");
             if (pass !== "mejia") {
                 alert("❌ Contraseña incorrecta. Acceso denegado.");
-                return; // Detiene la función y no los deja entrar
+                return;
             }
 
             miRol = "profesor";
             showScreen('teacher-screen');
+            actualizarListaPreguntasDOM();
             clickReset();
 
             onValue(estadoRef, (snapshot) => {
@@ -175,11 +283,17 @@
                 if (!data) return;
 
                 const arena = document.getElementById('arena-board');
+                const questionElement = document.getElementById('question-text');
                 
                 if (data.pregunta_activa) {
-                    document.getElementById('question-text').innerText = data.pregunta_activa;
+                    questionElement.innerText = data.pregunta_activa;
                 } else {
-                    document.getElementById('question-text').innerText = 'Presiona "Lanzar Pregunta Aleatoria" para comenzar.';
+                    questionElement.innerText = 'Presiona "Lanzar Pregunta Aleatoria" para comenzar.';
+                }
+
+                // Disparador de procesamiento MathJax cada vez que cambia el texto de la pregunta
+                if(window.MathJax && MathJax.typesetPromise) {
+                    MathJax.typesetPromise([questionElement]);
                 }
 
                 if (data.ganador_equipo) {
@@ -254,7 +368,12 @@
                 const liveQuestionTxt = document.getElementById('student-live-question');
 
                 if(data.pregunta_activa) {
-                    liveQuestionTxt.innerText = "Pregunta en pantalla...";
+                    liveQuestionTxt.innerText = "Pregunta: " + data.pregunta_activa;
+                    
+                    if(window.MathJax && MathJax.typesetPromise) {
+                        MathJax.typesetPromise([liveQuestionTxt]);
+                    }
+
                     if (!data.ganador_equipo) {
                         mainBuzzer.disabled = false;
                         mainBuzzer.innerText = "¡PULSAR!";
