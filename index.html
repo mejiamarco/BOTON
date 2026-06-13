@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> TRIVIA ARENA PRO: Academia Puente </title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <style>
+        :root {
+            /* Gamified Cyberpunk Palette */
+            --bg-dark: #0a0e17;
+            --bg-card: #131a26;
+            --text-light: #f1f5f9;
+            --gold-neon: #ffd700;
+            --gold-glow: rgba(255, 215, 0, 0.4);
+            
+            --team-blue: #00cdff;
+            --team-blue-dark: #0044aa;
+            --team-blue-glow: rgba(0, 205, 255, 0.5);
+            --team-green: #00ff66;
+            --team-green-dark: #008833;
+            --team-green-glow: rgba(0, 255, 102, 0.5);
+            
+            --team-pink: #ff0077;
+            --team-pink-dark: #aa004f;
+            --team-pink-glow: rgba(255, 0, 119, 0.5);
+            
+            --border-neon: #1e293b;
+            --error-neon: #ff3333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none;
+        font-family: 'Impact', 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light);
+        overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; position: relative;
+        }
+        
+        .screen { display: none; flex-direction: column; flex: 1; width: 100%; height: 100%; }
+        .active { display: flex; }
+
+        #question-text, .op-preview, .st-opt-btn, p, span, textarea, input, #student-live-question {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .city-badge {
+            position: fixed;
+            right: -30px; top: 50%; transform: translateY(-50%) rotate(90deg);
+            background: linear-gradient(90deg, #ff0055, #ffcc00); color: #fff;
+            padding: 8px 25px; font-weight: 900; letter-spacing: 4px;
+            font-size: 0.9rem; border-radius: 0 0 10px 10px; box-shadow: 0 0 20px rgba(255,0,85,0.4); z-index: 10;
+        }
+
+        /* LOBBY DE ACCESO */
+        #role-screen { justify-content: center; align-items: center; background: radial-gradient(circle at center, #1a233a 0%, var(--bg-dark) 100%); min-height: 100vh; }
+        .role-box { text-align: center; width: 90%; max-width: 420px; padding: 35px; background: var(--bg-card); border-radius: 20px; border: 2px solid var(--gold-neon); box-shadow: 0 0 30px var(--gold-glow); }
+        .role-box h2 { font-size: 2.3rem; color: var(--text-light); letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); margin-bottom: 5px; -webkit-text-stroke: 1px #000; }
+        .room-input { width: 100%; padding: 14px; margin: 20px 0 10px 0; background: #070a10; border: 2px solid var(--border-neon); border-radius: 10px; font-size: 1.2rem; text-align: center; text-transform: uppercase; font-weight: bold; color: var(--gold-neon); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .room-input:focus { border-color: var(--gold-neon); outline: none; box-shadow: 0 0 15px var(--gold-glow); }
+        .role-btn { display: block; width: 100%; padding: 16px; margin: 12px 0; font-size: 1.2rem; font-weight: bold; text-transform: uppercase; border: none; border-radius: 10px; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; }
+        .btn-prof { background: #222d42; color: #fff; border: 1px solid var(--border-neon); }
+        .btn-alum { background: linear-gradient(90deg, #ffcc00, #ff9900); color: #000; font-weight: 900; box-shadow: 0 5px 15px rgba(255,153,0,0.4); }
+        .role-btn:hover { transform: scale(1.03); }
+
+        /* VISTA PANEL MAESTRO */
+        header { background-color: #0d1524; padding: 15px 30px; display: flex; flex-direction: column; align-items: center; border-bottom: 3px solid var(--gold-neon); box-shadow: 0 5px 20px rgba(0,0,0,0.5); gap: 10px; }
+        .header-logo { max-height: 60px; object-fit: contain; }
+        header h1 { font-size: 1.8rem; color: #fff; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255,255,255,0.3); text-align: center; }
+        header h1 span { color: var(--gold-neon); text-shadow: 0 0 10px var(--gold-glow); }
+        
+        /* DISTRIBUCIÓN HORIZONTAL: Marcador a un costado */
+        .main-layout { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .dashboard { flex: 1; display: flex; flex-direction: column; padding: 25px; gap: 20px; justify-content: center; }
+
+        .question-box { background: var(--bg-card); padding: 35px; border-radius: 20px; border: 2px solid var(--border-neon); box-shadow: 0 10px 35px rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; min-height: 45vh; }
+        #question-text { font-size: 2.2rem; font-weight: bold; margin-bottom: 30px; color: #fff; text-align: center; line-height: 1.4; }
+        
+        .options-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 900px; margin: 0 auto; }
+        .op-preview { background: #192233; padding: 18px; border-radius: 10px; font-size: 1.3rem; font-weight: 600; border: 2px solid var(--border-neon); color: #94a3b8; transition: all 0.2s ease; }
+        .op-preview.is-correct-preview { border-color: var(--team-green) !important; background-color: rgba(0,255,102,0.1) !important; color: var(--team-green) !important; text-shadow: 0 0 5px var(--team-green-glow) !important; }
+
+        /* MARCADOR LATERAL COMPACTO */
+        .sidebar-arena { width: 320px; background: #0b111e; border-left: 3px solid var(--border-neon); display: flex; flex-direction: column; gap: 15px; padding: 20px; justify-content: center; }
+        .lane { width: 100%; height: 22vh; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 16px; position: relative; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); padding: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); border: 2px solid transparent; }
+        .lane-name { font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .lane-score { font-size: 3.5rem; font-weight: 900; margin: 2px 0; text-shadow: 0 4px 10px rgba(0,0,0,0.7); }
+        .lane-status-text { font-size: 0.85rem; font-weight: bold; letter-spacing: 1px; opacity: 0.9; text-transform: uppercase; text-align: center; }
+        
+        #lane-Azul { background: linear-gradient(180deg, #0e2347 0%, var(--team-blue-dark) 100%); border-color: var(--team-blue); color: #fff; box-shadow: 0 0 15px rgba(0,205,255,0.15); }
+        #lane-Verde { background: linear-gradient(180deg, #092e1b 0%, var(--team-green-dark) 100%); border-color: var(--team-green); color: #fff; box-shadow: 0 0 15px rgba(0,255,102,0.15); }
+        #lane-Rosa { background: linear-gradient(180deg, #3b0722 0%, var(--team-pink-dark) 100%); border-color: var(--team-pink); color: #fff; box-shadow: 0 0 15px rgba(255,0,119,0.15); }
+        
+        .sidebar-arena.has-winner .lane:not(.winner-lane) { height: 0; opacity: 0; padding: 0; margin: 0; overflow: hidden; border: none; }
+        .sidebar-arena.has-winner #lane-Azul.winner-lane { box-shadow: 0 0 40px var(--team-blue); background: var(--team-blue); color: #000; height: 70vh; }
+        .sidebar-arena.has-winner #lane-Verde.winner-lane { box-shadow: 0 0 40px var(--team-green); background: var(--team-green); color: #000; height: 70vh; }
+        .sidebar-arena.has-winner #lane-Rosa.winner-lane { box-shadow: 0 0 40px var(--team-pink); background: var(--team-pink); color: #fff; height: 70vh; }
+
+        /* PANEL DE PREGUNTAS DESPLEGABLE (ENGRANAJE) */
+        .bank-drawer { position: fixed; right: -400px; top: 0; width: 380px; height: 100vh; background: var(--bg-card); border-left: 4px solid var(--gold-neon); box-shadow: -10px 0 30px rgba(0,0,0,0.8); z-index: 200; display: flex; flex-direction: column; padding: 25px; gap: 15px; transition: right 0.4s cubic-bezier(0.075, 0.82, 0.165, 1); }
+        .bank-drawer.drawer-open { right: 0; }
+        .bank-drawer h3 { color: var(--gold-neon); text-transform: uppercase; border-bottom: 2px solid var(--gold-neon); padding-bottom: 6px; font-weight: 800; font-size: 1.1rem; letter-spacing: 1px; }
+        .bank-drawer textarea { background: #0a0e17; border: 1px solid var(--border-neon); border-radius: 8px; padding: 12px; color: #fff; resize: none; height: 110px; font-size: 0.9rem; }
+        .bank-drawer button { background: var(--gold-neon); color: #000; font-weight: 900; border: none; padding: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+        .questions-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .q-item { background: #1a2436; padding: 10px; border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-neon); }
+        .q-item button { background: var(--error-neon); border: none; color: white; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .close-drawer-btn { background: #334155 !important; color: #fff !important; margin-top: auto; }
+
+        /* BARRA DE CONTROLES INFERIOR */
+        .control-bar { display: flex; justify-content: center; gap: 15px; padding: 20px; background: #0d1524; border-top: 3px solid var(--border-neon); flex-wrap: wrap; align-items: center; }
+        .control-btn { padding: 16px 30px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; border-radius: 50px; cursor: pointer; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
+        .gear-btn { width: 55px; height: 55px; border-radius: 50%; background: #1e293b; color: var(--gold-neon); font-size: 1.6rem; border: 2px solid var(--gold-neon); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: transform 0.2s; }
+        .gear-btn:hover { transform: rotate(45deg); }
+
+        /* REGISTRO DE JUGADOR */
+        #student-screen { justify-content: center; align-items: center; padding: 20px; background: radial-gradient(circle at center, #111a2e 0%, var(--bg-dark) 100%); min-height: 100vh; }
+        .selector-box { width: 100%; max-width: 400px; background: var(--bg-card); padding: 30px; border-radius: 20px; border: 2px solid var(--border-neon); box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: center; }
+        .student-input { width: 100%; padding: 15px; font-size: 1.2rem; background: #070a10; border: 2px solid var(--border-neon); color: #fff; border-radius: 10px; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        
+        .team-select-btn { width: 100%; padding: 16px; margin: 8px 0; font-size: 1.3rem; font-weight: 900; border: none; border-radius: 12px; cursor: pointer; color: white; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.6); box-shadow: 0 6px 0 rgba(0,0,0,0.4); transition: transform 0.05s; }
+        .team-select-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.4); }
+        #btn-sel-Azul { background: linear-gradient(180deg, #00cdff, #0044aa); }
+        #btn-sel-Verde { background: linear-gradient(180deg, #00ff66, #008833); }
+        #btn-sel-Rosa { background: linear-gradient(180deg, #ff0077, #aa004f); }
+
+        /* INTERFAZ ESTUDIANTE (FONDO OSCURO ORIGINAL) */
+        #buzzer-container { display: none; width: 100%; min-height: 100vh; flex-direction: column; justify-content: flex-start; align-items: center; position: fixed; top:0; left:0; z-index: 100; background: #060911; padding: 20px; overflow-y: auto; gap: 20px; }
+        #student-live-question { color: #f1f5f9; font-size: 1.25rem; text-align: center; font-weight: bold; width: 100%; max-width: 600px; background: rgba(0,0,0,0.75); padding: 20px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.5); word-wrap: break-word; overflow-wrap: break-word; max-height: 35vh; overflow-y: auto; }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+            50% { transform: scale(1.04); box-shadow: 0 0 35px rgba(255,255,255,0.6); }
+            100% { transform: scale(1); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        }
+
+        .buzzer-btn { width: 210px; height: 210px; border-radius: 50%; color: #fff; font-size: 2.3rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; background: #222d42; border: 10px solid rgba(255,255,255,0.4); text-shadow: 0 2px 4px rgba(0,0,0,0.6); box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: transform 0.04s, background 0.2s, box-shadow 0.2s; margin: auto 0; flex-shrink: 0; }
+        .buzzer-btn:disabled { color: rgba(255,255,255,0.2) !important; background: #1e293b !important; border-color: rgba(255,255,255,0.1) !important; box-shadow: none !important; animation: none !important; cursor: not-allowed; }
+        .buzzer-btn.active-ready { animation: pulseGlow 1.2s infinite ease-in-out; }
+        .buzzer-btn:active:not(:disabled) { transform: scale(0.90) !important; }
+
+        .student-options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%; max-width: 500px; margin: 15px 0; flex-shrink: 0; }
+        .st-opt-btn { padding: 16px 20px; font-size: 1.15rem; font-weight: 700; border-radius: 12px; border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.8); color: #fff; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,0.5); text-align: left; transition: all 0.1s ease; }
+        .st-opt-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.5); background: var(--gold-neon); color: #000; }
+        #student-status-msg { font-size: 1.2rem; font-weight: bold; text-align: center; min-height: 35px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 100%; flex-shrink: 0; }
+
+        @media(max-width: 992px) {
+            .main-layout { flex-direction: column; overflow-y: auto; }
+            .sidebar-arena { width: 100%; flex-direction: row; height: auto; border-left: none; border-top: 3px solid var(--border-neon); }
+            .lane { height: 160px; }
+            .city-badge { display: none; }
+            .sidebar-arena.has-winner .lane.winner-lane { height: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="city-badge">LA PAZ</div>
+
+    <div id="role-screen" class="screen active">
+        <div class="role-box">
+            <h2> TRIVIA ARENA </h2>
+            <p style="color: #94a3b8; margin-bottom: 10px; font-size: 0.95rem; font-weight: bold; letter-spacing: 1px;">ACADEMIA PUENTE ESPORTS</p>
+            <input type="text" id="room-id" class="room-input" placeholder="CÓDIGO DE ESCUADRA" maxlength="20">
+        
+            <button class="role-btn btn-alum" onclick="initEstudiante()">🕹️ INGRESAR A LA BATALLA</button>
+            <button class="role-btn btn-prof" onclick="initProfesor()">💻 MODO OBSERVADOR (PROFE)</button>
+        </div>
+    </div>
+
+    <div id="teacher-screen" class="screen">
+        <header>
+            <img src="logo.png" alt="Logo Academia Puente" class="header-logo" onerror="this.style.display='none'">
+            <h1> ESCUADRAS SIMULTÁNEAS EN SALA: <span id="teacher-title-room">SALA</span> </h1>
+        </header>
+        
+        <div class="main-layout">
+            <div class="dashboard">
+                <div class="question-box">
+                    <div id="question-text">Esperando despliegue de armamento de preguntas...</div>
+                    <div class="options-preview-grid" id="teacher-options-preview"></div>
+                </div>
+            </div>
+
+            <div class="sidebar-arena" id="arena-board">
+                <div class="lane" id="lane-Azul"><div class="lane-name">Escuadra Azul</div><div class="lane-score" id="score-Azul">0</div><div class="lane-status-text" id="status-Azul">En espera</div></div>
+                <div class="lane" id="lane-Verde"><div class="lane-name">Escuadra Verde</div><div class="lane-score" id="score-Verde">0</div><div class="lane-status-text" id="status-Verde">En espera</div></div>
+                <div class="lane" id="lane-Rosa"><div class="lane-name">Escuadra Rosa</div><div class="lane-score" id="score-Rosa">0</div><div class="lane-status-text" id="status-Rosa">En espera</div></div>
+            </div>
+        </div>
+
+        <div class="bank-drawer" id="question-drawer">
+            <h3>🛠️ Carga Rápida (Pegar texto)</h3>
+            <textarea id="new-q-input" placeholder="¿Cuánto vale g?&#10;a) 10 m/s2&#10;b) 9.81 m/s2 *&#10;c) 5 m/s2&#10;d) 0 m/s2"></textarea>
+            <button onclick="agregarPreguntaManual()">Inyectar al Banco</button>
+            
+            <h3>📚 Inventario (<span id="total-q-count">0</span>)</h3>
+            <div class="questions-list" id="dom-questions-list"></div>
+            <button class="close-drawer-btn" onclick="toggleDrawer()">❌ CERRAR CONFIGURACIÓN</button>
+        </div>
+
+        <div class="control-bar">
+            <button class="gear-btn" onclick="toggleDrawer()" title="Configurar Banco de Preguntas">⚙️</button>
+            <button class="control-btn" id="draw-btn" style="background: linear-gradient(90deg, #ffd700, #ff8800); color: #000; font-weight: 900;" onclick="lanzarPregunta()">🚀 DESPLEGAR PREGUNTA AL AZAR</button>
+            <button class="control-btn" id="reset-btn" style="background: #232a36; color: #ffbc00; border: 1px solid #ffbc00;" onclick="clickReset()">🔄 REINICIAR PULSADORES (R)</button>
+            <button class="control-btn" id="kick-btn" style="background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c;" onclick="evacuarSalaRemota()">🧹 EXPULSAR JUGADORES Y VACIAR SALA</button>
+            <button class="control-btn" id="hard-reset-btn" style="background: #232a36; color: var(--error-neon); border: 1px solid var(--error-neon);" onclick="hardResetGlobal()">⚠️ HARD RESET TOTAL</button>
+        </div>
+    </div>
+
+    <div id="student-screen" class="screen">
+        <div class="selector-box">
+            <h3 style="letter-spacing: 2px; color: #fff; margin-bottom: 5px;">ESCUADRA ASIGNADA</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Lobby Conectado: <strong id="student-active-room" style="color: var(--gold-neon)">-</strong></p>
+            <input type="text" class="student-input" id="player-username" placeholder="Escribe tu Nickname / Tag" maxlength="15">
+            <button class="team-select-btn" id="btn-sel-Azul" onclick="selectTeam('Azul')">Unirse a Escuadra Azul</button>
+            <button class="team-select-btn" id="btn-sel-Verde" onclick="selectTeam('Verde')">Unirse a Escuadra Verde</button>
+            <button class="team-select-btn" id="btn-sel-Rosa" onclick="selectTeam('Rosa')">Unirse a Escuadra Rosa</button>
+        </div>
+    </div>
+
+    <div id="buzzer-container">
+        <div id="student-live-question">Sincronizando la señal del maestro...</div>
+
+        <div class="student-options-grid" id="box-student-options" style="display: none;">
+            <button class="st-opt-btn" id="opt-a" onclick="enviarRespuesta('a')">A</button>
+            <button class="st-opt-btn" id="opt-b" onclick="enviarRespuesta('b')">B</button>
+            <button class="st-opt-btn" id="opt-c" onclick="enviarRespuesta('c')">C</button>
+            <button class="st-opt-btn" id="opt-d" onclick="enviarRespuesta('d')">D</button>
+        </div>
+
+        <button class="buzzer-btn" id="main-buzzer" onclick="pressBuzzer()" disabled>BLOQUEADO</button>
+        <div id="student-status-msg"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpYhQI_6JW2xXTR3jU0JDD-bNX_-SG_3Q",
+            authDomain: "pulsadoraula.firebaseapp.com",
+            databaseURL: "https://pulsadoraula-default-rtdb.firebaseio.com",
+            projectId: "pulsadoraula",
+            storageBucket: "pulsadoraula.firebasestorage.app",
+            messagingSenderId: "264276501069",
+            appId: "1:264276501069:web:9286be98f4f9540052f204"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        let salaId = "GENERAL";
+        let salaRef = null;
+        let audioCtx = null;
+
+        let bancoPreguntas = [
+            { p: "Calcular el resultado de la siguiente operación combinada: 5 + 3 × 2 − 8 ÷ 4", a: "12", b: "9 *", c: "14", d: "5" },
+            { p: "Determinar el valor numérico de la expresión: 4 × (3 + 2)² − 10", a: "90 *", b: "30", c: "150", d: "40" },
+            { q: "MCD", p: "¿Cuál es el Máximo Común Divisor (MCD) de los números 24 y 36?", a: "6", b: "12 *", c: "4", d: "72" },
+            { p: "Tres cables de 12, 18 y 24 metros se quieren cortar en trozos iguales de la mayor longitud posible sin desperdiciar nada. ¿Cuánto medirá cada trozo?", a: "3 metros", b: "6 metros *", c: "4 metros", d: "2 metros" }
+        ];
+        let miEquipo = null;
+        let miNombre = "";
+        let miRol = null;
+        
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if(target) target.classList.add('active');
+        }
+
+        function validarSala() {
+            const input = document.getElementById('room-id');
+            const valor = input.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "");
+            if(valor === "") { alert("Introduce código de escuadra válido."); return null; }
+            return valor;
+        }
+
+        window.toggleDrawer = function() {
+            const drawer = document.getElementById('question-drawer');
+            drawer.classList.toggle('drawer-open');
+        }
+
+        window.agregarPreguntaManual = function() {
+            const textarea = document.getElementById('new-q-input');
+            const líneas = textarea.value.split('\n').map(l => l.trim()).filter(l => l !== "");
+            if(líneas.length < 3) { alert("Estructura incorrecta."); return; }
+
+            let nuevaQ = { p: líneas[0], a: "", b: "", c: "", d: "" };
+            líneas.forEach(l => {
+                if(l.toLowerCase().startsWith("a)")) nuevaQ.a = l.substring(2).trim();
+                if(l.toLowerCase().startsWith("b)")) nuevaQ.b = l.substring(2).trim();
+                if(l.toLowerCase().startsWith("c)")) nuevaQ.c = l.substring(2).trim();
+                if(l.toLowerCase().startsWith("d)")) nuevaQ.d = l.substring(2).trim();
+            });
+            if(!nuevaQ.a || !nuevaQ.b) { alert("Verifica incisos a), b), c), d)."); return; }
+
+            bancoPreguntas.push(nuevaQ);
+            textarea.value = "";
+            actualizarListaPreguntasDOM();
+        }
+
+        function actualizarListaPreguntasDOM() {
+            const container = document.getElementById('dom-questions-list');
+            const counter = document.getElementById('total-q-count');
+            if(!container) return;
+            container.innerHTML = "";
+            counter.innerText = bancoPreguntas.length;
+            bancoPreguntas.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = "q-item";
+                item.innerHTML = `<span>${idx+1}. ${q.p}</span> <button onclick="eliminarPreguntaManual(${idx})">×</button>`;
+                container.appendChild(item);
+            });
+        }
+
+        window.eliminarPreguntaManual = function(idx) {
+            if(bancoPreguntas.length <= 1) return;
+            bancoPreguntas.splice(idx, 1);
+            actualizarListaPreguntasDOM();
+        }
+
+        // CONTROL DE REPRODUCCIÓN AUDIO MP3 CON RESPALDO SINTETIZADO
+        function playSoundFile(url, fallbackType) {
+            const audio = new Audio(url);
+            audio.play().catch(() => {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                if(fallbackType === 'click') {
+                    let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                    osc.type = 'square'; osc.frequency.setValueAtTime(450, now);
+                    gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.06);
+                    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.07);
+                } else if(fallbackType === 'correct') {
+                    let f = [440, 554, 659, 880];
+                    f.forEach((freq, idx) => {
+                        let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                        osc.frequency.setValueAtTime(freq, now + (idx * 0.05));
+                        gain.gain.setValueAtTime(0.3, now + (idx * 0.05)); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + (idx * 0.05)); osc.stop(now + 0.45);
+                    });
+                } else if(fallbackType === 'incorrect') {
+                    let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(280, now);
+                    gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.4);
+                }
+            });
+        }
+
+        // PANEL DEL PROFESOR
+        window.initProfesor = function() {
+            const valid = validarSala(); if(!valid) return;
+            const pass = prompt("Clave Master:"); if (pass !== "mejia") return;
+
+            salaId = valid; salaRef = ref(db, `salas_maestros/${salaId}`); miRol = "profesor";
+            document.getElementById('teacher-title-room').innerText = salaId;
+            showScreen('teacher-screen'); actualizarListaPreguntasDOM();
+
+            get(salaRef).then((snapshot) => {
+                if(!snapshot.exists() || !snapshot.val().puntajes) {
+                    set(salaRef, { fase: "esperando", pregunta_activa: "", puntajes: { Azul: 0, Verde: 0, Rosa: 0 }, evacuar: false });
+                }
+            });
+            onValue(salaRef, (snapshot) => {
+                const data = snapshot.val(); if(!data) return;
+                if(data.puntajes) {
+                    document.getElementById('score-Azul').innerText = data.puntajes.Azul || 0;
+                    document.getElementById('score-Verde').innerText = data.puntajes.Verde || 0;
+                    document.getElementById('score-Rosa').innerText = data.puntajes.Rosa || 0;
+                }
+
+                const arena = document.getElementById('arena-board');
+                const qText = document.getElementById('question-text');
+                const pGrid = document.getElementById('teacher-options-preview');
+
+                if(data.fase === 'esperando') {
+                    qText.innerText = 'Presiona "DESPLEGAR PREGUNTA AL AZAR" para iniciar la partida...';
+                    pGrid.innerHTML = ""; arena.classList.remove('has-winner');
+                    document.querySelectorAll('.lane').forEach(l => { l.classList.remove('winner-lane'); l.querySelector('.lane-status-text').innerText = "En espera de despliegue"; });
+                } else if(data.fase === 'pulsacion') {
+                    qText.innerText = data.pregunta_activa; arena.classList.remove('has-winner');
+                    /* Neutro absoluto sin resaltados */
+                    pGrid.innerHTML = `<div class="op-preview">A) ${data.op_a}</div><div class="op-preview">B) ${data.op_b}</div><div class="op-preview">C) ${data.op_c}</div><div class="op-preview">D) ${data.op_d}</div>`;
+                    document.querySelectorAll('.lane').forEach(l => { l.classList.remove('winner-lane'); l.querySelector('.lane-status-text').innerText = "¡PULSADORES ACTIVOS!"; });
+                    if(window.MathJax) MathJax.typesetPromise([qText, pGrid]);
+                } else if(data.fase === 'votacion') {
+                    playSoundFile('boton.mp3', 'click');
+                    arena.classList.add('has-winner');
+                    /* ¡CORREGIDO! Neutro absoluto mientras el estudiante está en su tiempo de votación. Nada de verde aquí. */
+                    pGrid.innerHTML = `<div class="op-preview">A) ${data.op_a}</div><div class="op-preview">B) ${data.op_b}</div><div class="op-preview">C) ${data.op_c}</div><div class="op-preview">D) ${data.op_d}</div>`;
+                    document.querySelectorAll('.lane').forEach(l => {
+                        if(l.id.replace('lane-', '') === data.ganador_pulsacion_equipo) { l.classList.add('winner-lane'); l.querySelector('.lane-status-text').innerText = `⚡ ${data.ganador_pulsacion_nombre} resolviendo...`; }
+                    });
+                    if(window.MathJax) MathJax.typesetPromise([pGrid]);
+                } else if(data.fase === 'ronda_terminada') {
+                    arena.classList.add('has-winner');
+                    /* ¡SÓLO AQUÍ! El entorno verde de la respuesta correcta se activa únicamente cuando se ha publicado el resultado final. */
+                    pGrid.innerHTML = `<div class="op-preview ${data.inciso_correcto==='a'?'is-correct-preview':''}">A) ${data.op_a}</div><div class="op-preview ${data.inciso_correcto==='b'?'is-correct-preview':''}">B) ${data.op_b}</div><div class="op-preview ${data.inciso_correcto==='c'?'is-correct-preview':''}">C) ${data.op_c}</div><div class="op-preview ${data.inciso_correcto==='d'?'is-correct-preview':''}">D) ${data.op_d}</div>`;
+                    document.querySelectorAll('.lane').forEach(l => {
+                        if(l.id.replace('lane-', '') === data.ganador_pulsacion_equipo) { l.classList.add('winner-lane'); l.querySelector('.lane-status-text').innerText = data.resultado_ronda_msg; }
+                    });
+                    if(window.MathJax) MathJax.typesetPromise([pGrid]);
+                }
+            });
+        };
+
+        window.lanzarPregunta = function() {
+            if(!salaRef) return;
+            const q = bancoPreguntas[Math.floor(Math.random() * bancoPreguntas.length)];
+            let corr = q.a.includes("*") ? "a" : q.b.includes("*") ? "b" : q.c.includes("*") ? "c" : "d";
+            update(salaRef, {
+                fase: "pulsacion", pregunta_activa: q.p, evacuar: false,
+                op_a: q.a.replace("*","").trim(), op_b: q.b.replace("*","").trim(), op_c: q.c.replace("*","").trim(), op_d: q.d.replace("*","").trim(),
+                inciso_correcto: corr, ganador_pulsacion_equipo: null, ganador_pulsacion_nombre: null
+            });
+        }
+
+        window.clickReset = function() {
+            if(!salaRef) return;
+            update(salaRef, { fase: "esperando", pregunta_activa: "", ganador_pulsacion_equipo: null, ganador_pulsacion_nombre: null });
+        }
+
+        window.evacuarSalaRemota = function() {
+            if(!salaRef) return;
+            if(confirm("🧹 ¿Quieres expulsar a todos los alumnos para cambiar de grupo?\nSe les enviará de vuelta al login.")) {
+                update(salaRef, { evacuar: true, fase: "esperando", pregunta_activa: "", ganador_pulsacion_equipo: null, ganador_pulsacion_nombre: null });
+            }
+        }
+
+        window.hardResetGlobal = function() {
+            if(!salaRef) return;
+            if(confirm("⚠️ ¿Reiniciar todo?")) { set(salaRef, { fase: "esperando", pregunta_activa: "", ganador_pulsacion_equipo: null, ganador_pulsacion_nombre: null, puntajes: { Azul: 0, Verde: 0, Rosa: 0 }, evacuar: false }); }
+        }
+
+        window.addEventListener('keydown', (e) => { if (miRol === "profesor" && e.key.toLowerCase() === 'r') clickReset(); });
+        
+        // PANTALLA ESTUDIANTE
+        window.initEstudiante = function() {
+            const valid = validarSala(); if(!valid) return;
+            salaId = valid; salaRef = ref(db, `salas_maestros/${salaId}`); miRol = "estudiante";
+            document.getElementById('student-active-room').innerText = salaId;
+            showScreen('student-screen');
+        }
+
+        window.selectTeam = function(equipo) {
+            const nameInput = document.getElementById('player-username').value.trim();
+            if (nameInput === "") { alert("Nickname obligatorio."); return; }
+            
+            miNombre = nameInput; miEquipo = equipo;
+            document.getElementById('student-screen').style.display = 'none';
+            
+            const buzzerContainer = document.getElementById('buzzer-container');
+            buzzerContainer.style.display = 'flex';
+            
+            const mainBuzzer = document.getElementById('main-buzzer');
+            
+            if (miEquipo === 'Azul') {
+                mainBuzzer.style.background = 'linear-gradient(180deg, var(--team-blue) 0%, var(--team-blue-dark) 100%)';
+                mainBuzzer.style.borderColor = 'rgba(0, 205, 255, 0.6)';
+            } else if (miEquipo === 'Verde') {
+                mainBuzzer.style.background = 'linear-gradient(180deg, var(--team-green) 0%, var(--team-green-dark) 100%)';
+                mainBuzzer.style.borderColor = 'rgba(0, 255, 102, 0.6)';
+            } else if (miEquipo === 'Rosa') {
+                mainBuzzer.style.background = 'linear-gradient(180deg, var(--team-pink) 0%, var(--team-pink-dark) 100%)';
+                mainBuzzer.style.borderColor = 'rgba(255, 0, 119, 0.6)';
+            }
+
+            onValue(salaRef, (snapshot) => {
+                const data = snapshot.val(); if(!data) return;
+                
+                if(data.evacuar === true) {
+                    buzzerContainer.style.display = 'none';
+                    document.getElementById('student-screen').style.display = 'flex';
+                    showScreen('student-screen');
+                    return;
+                }
+
+                const qLiveTxt = document.getElementById('student-live-question');
+                const optBox = document.getElementById('box-student-options');
+                const statusMsg = document.getElementById('student-status-msg');
+
+                if(data.fase === 'esperando') {
+                    qLiveTxt.innerText = "PREPARANDO DESPLIEGUE EN LA PIZARRA...";
+                    mainBuzzer.style.display = 'flex'; mainBuzzer.disabled = true; mainBuzzer.innerText = "BLOQUEADO";
+                    mainBuzzer.classList.remove('active-ready'); optBox.style.display = 'none'; statusMsg.innerText = "";
+                } else if(data.fase === 'pulsacion') {
+                    qLiveTxt.innerText = "MIRA EL OBJETIVO: " + data.pregunta_activa;
+                    mainBuzzer.style.display = 'flex'; mainBuzzer.disabled = false; mainBuzzer.innerText = "¡PULSAR!";
+                    mainBuzzer.classList.add('active-ready'); optBox.style.display = 'none'; statusMsg.innerText = "";
+                    if(window.MathJax) MathJax.typesetPromise([qLiveTxt]);
+                } else if(data.fase === 'votacion') {
+                    mainBuzzer.disabled = true; mainBuzzer.classList.remove('active-ready');
+                    if(data.ganador_pulsacion_nombre === miNombre && data.ganador_pulsacion_equipo === miEquipo) {
+                        qLiveTxt.innerText = "🎯 ¡PULSACIÓN EXCELENTE! ELIGE TU RESPUESTA:";
+                        mainBuzzer.style.display = 'none'; optBox.style.display = 'grid';
+                        document.getElementById('opt-a').innerText = "A) " + data.op_a;
+                        document.getElementById('opt-b').innerText = "B) " + data.op_b;
+                        document.getElementById('opt-c').innerText = "C) " + data.op_c;
+                        document.getElementById('opt-d').innerText = "D) " + data.op_d;
+                    } else {
+                        qLiveTxt.innerText = data.pregunta_activa; mainBuzzer.innerText = "BLOQUEADO";
+                        statusMsg.innerText = `💥 ${data.ganador_pulsacion_nombre} capturó la zona de disparo...`;
+                    }
+                } else if(data.fase === 'ronda_terminada') {
+                    mainBuzzer.style.display = 'flex'; mainBuzzer.disabled = true; mainBuzzer.classList.remove('active-ready');
+                    mainBuzzer.innerText = "FIN DE RONDA"; optBox.style.display = 'none'; statusMsg.innerText = data.resultado_ronda_msg;
+                }
+            });
+        }
+
+        window.pressBuzzer = function() {
+            playSoundFile('boton.mp3', 'click');
+            fetch(`https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com/salas_maestros/${salaId}.json`)
+            .then(res => res.json()).then(data => {
+                if (data && data.fase === 'pulsacion') {
+                    update(salaRef, { fase: "votacion", ganador_pulsacion_equipo: miEquipo, ganador_pulsacion_nombre: miNombre });
+                }
+            });
+        }
+
+        window.enviarRespuesta = function(incisoElegido) {
+            fetch(`https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com/salas_maestros/${salaId}.json`)
+            .then(res => res.json()).then(data => {
+                if(!data || data.fase !== 'votacion') return;
+
+                let nuevosPuntos = { ...data.puntajes }; let msg = "";
+                const esCorrecto = (incisoElegido === data.inciso_correcto);
+
+                if(esCorrecto) {
+                    playSoundFile('aplauso.mp3', 'correct');
+                    nuevosPuntos[miEquipo] = (nuevosPuntos[miEquipo] || 0) + 10;
+                    msg = `💥 ESCUADRA ${miEquipo}: +10 Pts obtenidos por ${miNombre}.`;
+                } else {
+                    playSoundFile('incorrecto.mp3', 'incorrect');
+                    nuevosPuntos[miEquipo] = Math.max(0, (nuevosPuntos[miEquipo] || 0) - 5);
+                    Object.keys(nuevosPuntos).forEach(key => { if(key !== miEquipo) nuevosPuntos[key] = (nuevosPuntos[key] || 0) + 5; });
+                    msg = `💀 ${miNombre} CAYÓ.\nSe penaliza al equipo y hay bonificación rival.`;
+                }
+                update(salaRef, { fase: "ronda_terminada", puntajes: nuevosPuntos, resultado_ronda_msg: msg });
+            });
+        }
+    </script>
+</body>
+</html>
