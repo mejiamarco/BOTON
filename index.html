@@ -581,6 +581,7 @@
         let countdownTimer = null;
         let readingTimer = null;
         let tiempoInicioVotacion = 0;
+        let ultimaPreguntaAtendida = -1;
 
         // BANCO DE PREGUNTAS DE JERARQUÍA DE OPERACIONES (10 EJERCICIOS)
         let bancoPreguntas = [
@@ -917,50 +918,54 @@
                 if(data.fase === 'esperando') {
                     if(countdownTimer) clearInterval(countdownTimer);
                     if(readingTimer) clearInterval(readingTimer);
+                    readingTimer = null;
+                    ultimaPreguntaAtendida = -1;
                     qLiveTxt.innerText = "PREPARANDO DESPLIEGUE EN LA PIZARRA...";
                     mainBuzzer.style.display = 'flex'; mainBuzzer.disabled = true; mainBuzzer.innerText = "BLOQUEADO";
                     mainBuzzer.classList.remove('active-ready', 'btn-lectura'); optBox.style.display = 'none'; statusMsg.innerText = "";
                     mainBuzzer.style.background = colorOriginalEquipo;
                     timerDisp.style.display = 'none';
                 } else if(data.fase === 'pulsacion') {
-                    if(countdownTimer) clearInterval(countdownTimer);
-                    if(readingTimer) clearInterval(readingTimer);
-                    
                     qLiveTxt.innerHTML = data.pregunta_activa;
                     optBox.style.display = 'none'; statusMsg.innerText = "";
                     timerDisp.style.display = 'none';
 
-                    // LÓGICA DINÁMICA DE TIEMPO DE LECTURA PREVIO
-                    // Misiones 1 a 4 (índices 0 a 3) -> 5 segundos
-                    // Misiones 5 a 10 (índices 4 a 9) -> 10 segundos
                     const idxActual = data.index_pregunta !== undefined ? data.index_pregunta : 0;
-                    let tiempoLecturaSeg = (idxActual < 4) ? 5 : 10;
+                    
+                    if (ultimaPreguntaAtendida !== idxActual) {
+                        if(countdownTimer) clearInterval(countdownTimer);
+                        if(readingTimer) clearInterval(readingTimer);
+                        ultimaPreguntaAtendida = idxActual;
 
-                    mainBuzzer.style.display = 'flex';
-                    mainBuzzer.disabled = true;
-                    mainBuzzer.classList.add('btn-lectura');
-                    mainBuzzer.classList.remove('active-ready');
-                    mainBuzzer.innerText = `📖 LEYENDO (${tiempoLecturaSeg}s)...`;
+                        let tiempoLecturaSeg = (idxActual < 4) ? 5 : 10;
 
-                    readingTimer = setInterval(() => {
-                        tiempoLecturaSeg--;
-                        if(tiempoLecturaSeg > 0) {
-                            mainBuzzer.innerText = `📖 LEYENDO (${tiempoLecturaSeg}s)...`;
-                        } else {
-                            clearInterval(readingTimer);
-                            readingTimer = null;
-                            mainBuzzer.disabled = false;
-                            mainBuzzer.classList.remove('btn-lectura');
-                            mainBuzzer.classList.add('active-ready');
-                            mainBuzzer.innerText = "¡PULSAR!";
-                            mainBuzzer.style.background = colorOriginalEquipo;
-                            playSoundFile('botón.mp3', 'click');
-                        }
-                    }, 1000);
+                        mainBuzzer.style.display = 'flex';
+                        mainBuzzer.disabled = true;
+                        mainBuzzer.classList.add('btn-lectura');
+                        mainBuzzer.classList.remove('active-ready');
+                        mainBuzzer.innerText = `📖 LEYENDO (${tiempoLecturaSeg}s)...`;
+
+                        readingTimer = setInterval(() => {
+                            tiempoLecturaSeg--;
+                            if(tiempoLecturaSeg > 0) {
+                                mainBuzzer.innerText = `📖 LEYENDO (${tiempoLecturaSeg}s)...`;
+                            } else {
+                                clearInterval(readingTimer);
+                                readingTimer = null;
+                                mainBuzzer.disabled = false;
+                                mainBuzzer.classList.remove('btn-lectura');
+                                mainBuzzer.classList.add('active-ready');
+                                mainBuzzer.innerText = "¡PULSAR!";
+                                mainBuzzer.style.background = colorOriginalEquipo;
+                                playSoundFile('botón.mp3', 'click');
+                            }
+                        }, 1000);
+                    }
 
                     if(window.MathJax) MathJax.typesetPromise([qLiveTxt]);
                 } else if(data.fase === 'votacion') {
                     if(readingTimer) clearInterval(readingTimer);
+                    readingTimer = null;
                     mainBuzzer.disabled = true; mainBuzzer.classList.remove('active-ready', 'btn-lectura');
                     mainBuzzer.style.background = colorOriginalEquipo;
 
@@ -1060,9 +1065,6 @@
                 update(salaRef, { fase: "ronda_terminada", puntajes: nuevosPuntos, resultado_ronda_msg: msg, historial: historialPrevio });
             });
         }
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
